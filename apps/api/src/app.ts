@@ -1,5 +1,7 @@
 import Fastify from 'fastify'
 import { authRoutes } from './modules/auth/auth.routes'
+import { entreprisesRoutes } from './modules/entreprises/entreprises.routes'
+import { utilisateursRoutes } from './modules/utilisateurs/utilisateurs.routes'
 import corsPlugin from '@fastify/cors'
 import jwtPlugin from '@fastify/jwt'
 import rateLimitPlugin from '@fastify/rate-limit'
@@ -38,11 +40,16 @@ export async function buildApp() {
   // ── Modules ────────────────────────────────────────────────────────────────
 
   await app.register(authRoutes, { prefix: '/api/v1/auth' })
+  await app.register(entreprisesRoutes, { prefix: '/api/v1/entreprises' })
+  await app.register(utilisateursRoutes, { prefix: '/api/v1/utilisateurs' })
 
   // À décommenter au fur et à mesure des sprints :
-  // await app.register(authRoutes, { prefix: '/api/v1/auth' })
-  // await app.register(entreprisesRoutes, { prefix: '/api/v1/entreprises' })
-  // await app.register(utilisateursRoutes, { prefix: '/api/v1/utilisateurs' })
+  // await app.register(agentsRoutes, { prefix: '/api/v1/agents' })
+  // await app.register(chantiersRoutes, { prefix: '/api/v1/chantiers' })
+  // await app.register(contratsRoutes, { prefix: '/api/v1/contrats' })
+  // await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
+  // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
+  // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
   // await app.register(agentsRoutes, { prefix: '/api/v1/agents' })
   // await app.register(chantiersRoutes, { prefix: '/api/v1/chantiers' })
   // await app.register(contratsRoutes, { prefix: '/api/v1/contrats' })

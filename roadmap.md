@@ -10,7 +10,7 @@ type: project
 |--------|----------|--------|------|
 | S0 | Monorepo + Prisma + CI/CD Render/Vercel | ✅ TERMINÉ | 2026-04-01 |
 | S1 | Auth complète (OTP AxiomText + JWT + sessions) | ✅ TERMINÉ | 2026-04-01 |
-| S2 | Entreprises + Utilisateurs + RBAC middleware | ⏳ À FAIRE | — |
+| S2 | Entreprises + Utilisateurs + RBAC middleware | ✅ TERMINÉ | 2026-04-01 |
 | S3 | Agents + Contrats + Transfert atomique | ⏳ À FAIRE | — |
 | S4 | Chantiers + fin contrat automatique | ⏳ À FAIRE | — |
 | S5 | Pointages + calcul A+C + corrections | ⏳ À FAIRE | — |
