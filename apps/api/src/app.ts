@@ -1,4 +1,5 @@
 import Fastify from 'fastify'
+import { authRoutes } from './modules/auth/auth.routes'
 import corsPlugin from '@fastify/cors'
 import jwtPlugin from '@fastify/jwt'
 import rateLimitPlugin from '@fastify/rate-limit'
@@ -35,6 +36,9 @@ export async function buildApp() {
   app.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }))
 
   // ── Modules ────────────────────────────────────────────────────────────────
+
+  await app.register(authRoutes, { prefix: '/api/v1/auth' })
+
   // À décommenter au fur et à mesure des sprints :
   // await app.register(authRoutes, { prefix: '/api/v1/auth' })
   // await app.register(entreprisesRoutes, { prefix: '/api/v1/entreprises' })
