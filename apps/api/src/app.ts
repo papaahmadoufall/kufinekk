@@ -6,6 +6,7 @@ import { agentsRoutes } from './modules/agents/agents.routes'
 import { contratsRoutes } from './modules/contrats/contrats.routes'
 import { chantiersRoutes } from './modules/chantiers/chantiers.routes'
 import { pointagesRoutes } from './modules/pointages/pointages.routes'
+import { cyclesPaieRoutes } from './modules/cycles-paie/cycles-paie.routes'
 import corsPlugin from '@fastify/cors'
 import jwtPlugin from '@fastify/jwt'
 import rateLimitPlugin from '@fastify/rate-limit'
@@ -53,8 +54,9 @@ export async function buildApp() {
 
   await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
 
+  await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
+
   // À décommenter au fur et à mesure des sprints :
-  // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
   // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
   // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
   // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
