@@ -4,7 +4,24 @@
       "Bash(winget install:*)",
       "Bash(gh auth:*)",
       "Bash(export PATH=$PATH:\"/c/Program Files/GitHub CLI\")",
-      "Bash(gh repo:*)"
+      "Bash(gh repo:*)",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__list_organizations",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__list_projects",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__get_cost",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__confirm_cost",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__create_project",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__get_project_url",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__apply_migration",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__list_tables",
+      "Bash(npm install:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:5JNKAsEJMgGty4Vh@db.sdbrpkzxwbuooggktpqg.supabase.co:5432/postgres\" npx prisma generate)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:5JNKAsEJMgGty4Vh@db.sdbrpkzxwbuooggktpqg.supabase.co:5432/postgres\" npx prisma db pull)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.sdbrpkzxwbuooggktpqg:5JNKAsEJMgGty4Vh@aws-0-eu-west-1.pooler.supabase.com:5432/postgres\" npx prisma db pull)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.sdbrpkzxwbuooggktpqg:5JNKAsEJMgGty4Vh@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require\" npx prisma db pull)",
+      "mcp__7ea6c2c6-201a-4575-a51d-353a3ae5cba8__execute_sql",
+      "Bash(DATABASE_URL=\"postgresql://postgres:xcHY6p4F9cyIhESJkufinekk@aws-0-eu-west-1.pooler.supabase.com:6543/postgres\" npx prisma db pull)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.sdbrpkzxwbuooggktpqg:xcHY6p4F9cyIhESJkufinekk@aws-0-eu-west-1.pooler.supabase.com:6543/postgres\" npx prisma db pull)",
+      "Bash(DATABASE_URL=\"postgresql://postgres.sdbrpkzxwbuooggktpqg:xcHY6p4F9cyIhESJkufinekk@aws-0-eu-west-1.pooler.supabase.com:5432/postgres\" JWT_SECRET=\"dev-secret-change-in-production-min-32-chars\" timeout 10 npx tsx src/server.ts)"
     ]
   }
 }
