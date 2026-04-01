@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: kufinekk-api
+    runtime: node
+    rootDir: apps/api
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && node dist/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: AXIOMTEXT_TOKEN
+        sync: false
+      - key: AXIOMTEXT_SIGNATURE
+        value: Kufinekk
+      - key: WAVE_API_TOKEN
+        sync: false
+      - key: WAVE_API_URL
+        value: https://api.wave.com
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        value: kufinekk-assets
+      - key: PORT
+        value: 10000
+      - key: HOST
+        value: 0.0.0.0
+      - key: API_BASE_URL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: false

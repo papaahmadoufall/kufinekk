@@ -1,11 +1,39 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
 dist/
 .next/
+out/
+build/
+
+# Environment — JAMAIS commiter les vraies clés
 .env
 .env.local
 .env.production
-*.env
-!.env.example
-.DS_Store
+.env.staging
+# Seuls ces fichiers sont autorisés :
+# .env.example    ✅
+# .env.development (contient des clés de dev, ok localement)
+
+# Prisma
+prisma/migrations/dev.db
+prisma/migrations/dev.db-journal
+
+# Logs
 *.log
-prisma/migrations/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Vercel
+.vercel
