@@ -2,6 +2,8 @@ import Fastify from 'fastify'
 import { authRoutes } from './modules/auth/auth.routes'
 import { entreprisesRoutes } from './modules/entreprises/entreprises.routes'
 import { utilisateursRoutes } from './modules/utilisateurs/utilisateurs.routes'
+import { agentsRoutes } from './modules/agents/agents.routes'
+import { contratsRoutes } from './modules/contrats/contrats.routes'
 import corsPlugin from '@fastify/cors'
 import jwtPlugin from '@fastify/jwt'
 import rateLimitPlugin from '@fastify/rate-limit'
@@ -43,10 +45,11 @@ export async function buildApp() {
   await app.register(entreprisesRoutes, { prefix: '/api/v1/entreprises' })
   await app.register(utilisateursRoutes, { prefix: '/api/v1/utilisateurs' })
 
+  await app.register(agentsRoutes, { prefix: '/api/v1/agents' })
+  await app.register(contratsRoutes, { prefix: '/api/v1/contrats' })
+
   // À décommenter au fur et à mesure des sprints :
-  // await app.register(agentsRoutes, { prefix: '/api/v1/agents' })
   // await app.register(chantiersRoutes, { prefix: '/api/v1/chantiers' })
-  // await app.register(contratsRoutes, { prefix: '/api/v1/contrats' })
   // await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
   // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
   // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
