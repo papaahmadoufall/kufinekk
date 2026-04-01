@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Enums ─────────────────────────────────────────────────
+
+enum Role {
+  MANAGER
+  POINTEUR
+}
+
+enum Plan {
+  ESSENTIEL
+  PRO
+  ENTREPRISE
+}
+
+enum TypeContrat {
+  CONTRACTUEL
+  NON_CONTRACTUEL
+}
+
+enum StatutContrat {
+  PROVISOIRE
+  ACTIF
+  TERMINE
+}
+
+enum StatutPointage {
+  EN_COURS
+  VALIDE
+  CORRIGE
+  ABSENT
+}
+
+enum StatutCycle {
+  EN_COURS
+  VALIDE
+  PAYE
+  ECHOUE
+}
+
+// ── Modèles ───────────────────────────────────────────────
+
+model Entreprise {
+  id          String   @id @default(uuid())
+  nom         String
+  telephone   String   @unique
+  adresse     String?
+  plan        Plan     @default(ESSENTIEL)
+  actif       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  utilisateurs Utilisateur[]
+  chantiers    Chantier[]
+  contrats     Contrat[]
+}
+
+model Utilisateur {
+  id           String   @id @default(uuid())
+  entrepriseId String
+  nom          String
+  telephone    String   @unique
+  role         Role
+  pinHash      String
+  actif        Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  entreprise         Entreprise  @relation(fields: [entrepriseId], references: [id])
+  pointagesEffectues Pointage[]  @relation("PointeePar")
+  pointagesCoriges   Pointage[]  @relation("CorrigePar")
+  contratsValides    Contrat[]   @relation("ValideParUtilisateur")
+  cyclesValides      CyclePaie[] @relation("CycleValideePar")
+  sessions           Session[]
+}
+
+model Agent {
+  id               String   @id @default(uuid())
+  matricule        String   @unique
+  telephone        String   @unique
+  nom              String
+  prenom           String
+  pinHash          String
+  telephoneVerifie Boolean  @default(false)
+  qrCodeUrl        String?
+  createdAt        DateTime @default(now())
+
+  contrats Contrat[]
+}
+
+model Chantier {
+  id                  String    @id @default(uuid())
+  entrepriseId        String
+  nom                 String
+  adresse             String?
+  dateDebut           DateTime
+  dateFinPrevue       DateTime?
+  statut              String    @default("ACTIF")
+  heureDebutStd       String
+  seuilHeuresNormales Float     @default(8.0)
+  createdAt           DateTime  @default(now())
+
+  entreprise Entreprise @relation(fields: [entrepriseId], references: [id])
+  contrats   Contrat[]
+}
+
+model Contrat {
+  id                  String        @id @default(uuid())
+  agentId             String
+  chantierId          String
+  entrepriseId        String
+  poste               String
+  typeContrat         TypeContrat
+  tauxJournalierXof   Int
+  tauxHeureSuppXof    Int?
+  seuilHeuresNormales Float?
+  heureDebutStd       String?
+  dateDebut           DateTime
+  dateFin             DateTime?
+  statut              StatutContrat @default(PROVISOIRE)
+  valideParId         String?
+  noteCloture         String?
+  createdAt           DateTime      @default(now())
+
+  agent      Agent        @relation(fields: [agentId], references: [id])
+  chantier   Chantier     @relation(fields: [chantierId], references: [id])
+  entreprise Entreprise   @relation(fields: [entrepriseId], references: [id])
+  validePar  Utilisateur? @relation("ValideParUtilisateur", fields: [valideParId], references: [id])
+  pointages  Pointage[]
+  cyclesPaie CyclePaie[]
+}
+
+model Pointage {
+  id                 String         @id @default(uuid())
+  contratId          String
+  pointeParId        String
+  dateJournee        DateTime
+  heureEntree        DateTime
+  heureSortie        DateTime?
+  totalJournalierXof Int?
+  statut             StatutPointage @default(EN_COURS)
+  corrigeParId       String?
+  corrigeLe          DateTime?
+  noteCorrection     String?
+
+  contrat    Contrat      @relation(fields: [contratId], references: [id])
+  pointePar  Utilisateur  @relation("PointeePar", fields: [pointeParId], references: [id])
+  corrigePar Utilisateur? @relation("CorrigePar", fields: [corrigeParId], references: [id])
+
+  @@index([contratId, dateJournee])
+}
+
+model CyclePaie {
+  id            String      @id @default(uuid())
+  contratId     String
+  semaineDebut  DateTime
+  semaineFin    DateTime
+  totalHebdoXof Int
+  statut        StatutCycle @default(EN_COURS)
+  valideParId   String?
+  valideLe      DateTime?
+  waveBatchId   String?
+  wavePayoutId  String?
+  waveStatut    String?
+  createdAt     DateTime    @default(now())
+
+  contrat   Contrat      @relation(fields: [contratId], references: [id])
+  validePar Utilisateur? @relation("CycleValideePar", fields: [valideParId], references: [id])
+}
+
+model OtpSession {
+  id        String   @id @default(uuid())
+  telephone String
+  codeHash  String
+  expireLe  DateTime
+  utilise   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([telephone, expireLe])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  userType  String
+  tokenHash String   @unique
+  expireLe  DateTime
+  createdAt DateTime @default(now())
+
+  utilisateur Utilisateur? @relation(fields: [userId], references: [id], map: "Session_utilisateurId_fkey")
+}
