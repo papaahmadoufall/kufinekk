@@ -14,9 +14,7 @@ build/
 .env.local
 .env.production
 .env.staging
-# Seuls ces fichiers sont autorisés :
-# .env.example    ✅
-# .env.development (contient des clés de dev, ok localement)
+.env.development
 
 # Prisma
 prisma/migrations/dev.db
