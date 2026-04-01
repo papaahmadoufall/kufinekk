@@ -13,7 +13,7 @@ type: project
 | S2 | Entreprises + Utilisateurs + RBAC middleware | ✅ TERMINÉ | 2026-04-01 |
 | S3 | Agents + Contrats + Transfert atomique | ✅ TERMINÉ | 2026-04-01 |
 | S4 | Chantiers + fin contrat automatique | ✅ TERMINÉ | 2026-04-01 |
-| S5 | Pointages + calcul A+C + corrections | ⏳ À FAIRE | — |
+| S5 | Pointages + calcul A+C + corrections | ✅ TERMINÉ | 2026-04-01 |
 | S6 | CyclePaie + Wave Payout + polling | ⏳ À FAIRE | — |
 | S7 | Dashboard + sécurité + OpenAPI spec | ⏳ À FAIRE | — |
 
