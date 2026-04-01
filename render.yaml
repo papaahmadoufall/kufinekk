@@ -3,8 +3,8 @@ services:
     name: kufinekk-api
     runtime: node
     rootDir: apps/api
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && node dist/server.js
+    buildCommand: cd ../.. && npm install && cd apps/api && npx prisma generate && npm run build
+    startCommand: npx prisma db push --accept-data-loss && node dist/server.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -39,4 +39,4 @@ services:
       - key: CORS_ORIGIN
         sync: false
     healthCheckPath: /health
-    autoDeploy: false
+    autoDeploy: true
