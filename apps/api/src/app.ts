@@ -1,4 +1,10 @@
 import Fastify from 'fastify'
+import corsPlugin from '@fastify/cors'
+import jwtPlugin from '@fastify/jwt'
+import rateLimitPlugin from '@fastify/rate-limit'
+import sensiblePlugin from '@fastify/sensible'
+
+import { registerErrorHandler } from './shared/middleware/error-handler'
 import { authRoutes } from './modules/auth/auth.routes'
 import { entreprisesRoutes } from './modules/entreprises/entreprises.routes'
 import { utilisateursRoutes } from './modules/utilisateurs/utilisateurs.routes'
@@ -7,10 +13,7 @@ import { contratsRoutes } from './modules/contrats/contrats.routes'
 import { chantiersRoutes } from './modules/chantiers/chantiers.routes'
 import { pointagesRoutes } from './modules/pointages/pointages.routes'
 import { cyclesPaieRoutes } from './modules/cycles-paie/cycles-paie.routes'
-import corsPlugin from '@fastify/cors'
-import jwtPlugin from '@fastify/jwt'
-import rateLimitPlugin from '@fastify/rate-limit'
-import sensiblePlugin from '@fastify/sensible'
+import { dashboardRoutes } from './modules/dashboard/dashboard.routes'
 
 export async function buildApp() {
   const app = Fastify({
@@ -33,10 +36,16 @@ export async function buildApp() {
     sign: { expiresIn: process.env.JWT_EXPIRES_IN ?? '7d' },
   })
 
+  // Rate-limit global : 100 req/min
   await app.register(rateLimitPlugin, {
     max: 100,
     timeWindow: '1 minute',
+    keyGenerator: (req) => req.ip,
   })
+
+  // ── Error handler global ───────────────────────────────────────────────────
+
+  registerErrorHandler(app)
 
   // ── Health check ───────────────────────────────────────────────────────────
 
@@ -44,31 +53,27 @@ export async function buildApp() {
 
   // ── Modules ────────────────────────────────────────────────────────────────
 
-  await app.register(authRoutes, { prefix: '/api/v1/auth' })
+  // Auth : rate-limit renforcé sur send-otp (5 req/min par IP)
+  await app.register(async (authApp) => {
+    await authApp.register(rateLimitPlugin, {
+      max: 5,
+      timeWindow: '1 minute',
+      keyGenerator: (req) => req.ip,
+      errorResponseBuilder: () => ({
+        error: { code: 'rate_limit', message: 'Trop de tentatives, réessayez dans une minute' },
+      }),
+    })
+    await authApp.register(authRoutes)
+  }, { prefix: '/api/v1/auth' })
+
   await app.register(entreprisesRoutes, { prefix: '/api/v1/entreprises' })
   await app.register(utilisateursRoutes, { prefix: '/api/v1/utilisateurs' })
-
   await app.register(agentsRoutes, { prefix: '/api/v1/agents' })
   await app.register(contratsRoutes, { prefix: '/api/v1/contrats' })
   await app.register(chantiersRoutes, { prefix: '/api/v1/chantiers' })
-
   await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
-
   await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
-
-  // À décommenter au fur et à mesure des sprints :
-  // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
-  // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
-  // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
-  // await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
-  // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
-  // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
-  // await app.register(agentsRoutes, { prefix: '/api/v1/agents' })
-  // await app.register(chantiersRoutes, { prefix: '/api/v1/chantiers' })
-  // await app.register(contratsRoutes, { prefix: '/api/v1/contrats' })
-  // await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
-  // await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
-  // await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
+  await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
 
   return app
 }
