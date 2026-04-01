@@ -15,7 +15,7 @@ type: project
 | S4 | Chantiers + fin contrat automatique | ✅ TERMINÉ | 2026-04-01 |
 | S5 | Pointages + calcul A+C + corrections | ✅ TERMINÉ | 2026-04-01 |
 | S6 | CyclePaie + Wave Payout + polling | ✅ TERMINÉ | 2026-04-01 |
-| S7 | Dashboard + sécurité + OpenAPI spec | ⏳ À FAIRE | — |
+| S7 | Dashboard + sécurité + OpenAPI spec | ✅ TERMINÉ | 2026-04-01 |
 
 ---
 
