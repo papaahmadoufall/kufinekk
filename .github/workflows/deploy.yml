@@ -2,9 +2,9 @@ name: CI / Deploy
 
 on:
   push:
-    branches: [main, staging]
+    branches: [main, master]
   pull_request:
-    branches: [main, staging]
+    branches: [main, master]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -41,17 +41,23 @@ jobs:
       - name: Typecheck types package
         run: npm run typecheck --workspace=packages/types
 
-  # ── 2. Deploy API → Render ──────────────────────────────────────────────────
+  # ── 2. Deploy API → Railway ─────────────────────────────────────────────────
 
   deploy-api:
-    name: Deploy API (Render)
+    name: Deploy API (Railway)
     needs: typecheck
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
-      - name: Trigger Render deploy hook
-        run: |
-          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway
+        run: railway up --service kufinekk-api --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   # ── 3. Deploy Web → Vercel ──────────────────────────────────────────────────
 
@@ -59,7 +65,7 @@ jobs:
     name: Deploy Web (Vercel)
     needs: typecheck
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
       - uses: actions/checkout@v4
 
