@@ -11,7 +11,7 @@ export async function getResume(entrepriseId: string, input: ResumeInput) {
 
   const whereContrat = {
     entrepriseId,
-    statut: { in: ['ACTIF', 'PROVISOIRE'] as const },
+    statut: { in: ['ACTIF', 'PROVISOIRE'] },
     ...(input.chantier_id && { chantierId: input.chantier_id }),
   }
 
@@ -76,7 +76,7 @@ export async function getResume(entrepriseId: string, input: ResumeInput) {
     enCoursEntree,
     absentAujourdhui,
     agentsEnAttente,
-    totalJourneeXof: totalJourneeXof._sum.totalJournalierXof ?? 0,
+    totalJourneeXof: totalJourneeXof?._sum?.totalJournalierXof ?? 0,
   }
 }
 
