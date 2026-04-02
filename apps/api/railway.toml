@@ -1,6 +1,6 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install --cache /tmp/npm-cache && cd apps/api && npx prisma generate && npm run build"
+buildCommand = "cd ../.. && npm install --cache /tmp/npm-cache && cd apps/api && npx prisma generate && npm run build"
 
 [deploy]
 startCommand = "npx prisma db push --accept-data-loss && node dist/server.js"
