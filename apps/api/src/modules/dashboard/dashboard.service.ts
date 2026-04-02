@@ -1,4 +1,5 @@
 import { prisma } from '../../shared/db'
+import { StatutContrat } from '@prisma/client'
 import type { ResumeInput, SemaineInput } from './dashboard.schema'
 
 // ── Résumé du jour ─────────────────────────────────────────────────────────
@@ -11,7 +12,7 @@ export async function getResume(entrepriseId: string, input: ResumeInput) {
 
   const whereContrat = {
     entrepriseId,
-    statut: { in: ['ACTIF', 'PROVISOIRE'] },
+    statut: { in: [StatutContrat.ACTIF, StatutContrat.PROVISOIRE] },
     ...(input.chantier_id && { chantierId: input.chantier_id }),
   }
 

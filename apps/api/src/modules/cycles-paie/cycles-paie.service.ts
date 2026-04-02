@@ -228,7 +228,7 @@ export async function getStatutWave(id: string, entrepriseId: string) {
   }
 
   // Appel Wave pour statut frais
-  const waveData = await getStatutPayoutBatch(cycle.waveBatchId)
+  const waveData = await getStatutPayoutBatch(cycle.waveBatchId) as { id: string; status: string; [key: string]: unknown }
 
   // Mettre à jour le statut en base si changé
   if (waveData.status !== cycle.waveStatut) {
