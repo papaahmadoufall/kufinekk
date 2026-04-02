@@ -14,6 +14,13 @@ export function registerErrorHandler(app: FastifyInstance) {
       })
     }
 
+    // Rate limit
+    if (err.statusCode === 429) {
+      return reply.code(429).send({
+        error: { code: 'rate_limit', message: 'Trop de tentatives, réessayez dans une minute' },
+      })
+    }
+
     // Erreur Fastify (ex: payload trop grand)
     if (err.statusCode) {
       return reply.code(err.statusCode).send({

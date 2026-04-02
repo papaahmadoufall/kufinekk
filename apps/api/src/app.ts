@@ -59,9 +59,6 @@ export async function buildApp() {
       max: 5,
       timeWindow: '1 minute',
       keyGenerator: (req) => req.ip,
-      errorResponseBuilder: () => ({
-        error: { code: 'rate_limit', message: 'Trop de tentatives, réessayez dans une minute' },
-      }),
     })
     await authApp.register(authRoutes)
   }, { prefix: '/api/v1/auth' })
