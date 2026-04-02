@@ -1,10 +1,23 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useFormState, useFormStatus } from 'react-dom'
 import { loginAction } from './actions'
 
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return (
+    <button
+      type="submit"
+      disabled={pending}
+      className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-colors text-sm mt-2"
+    >
+      {pending ? 'Connexion…' : 'Se connecter'}
+    </button>
+  )
+}
+
 export default function LoginPage() {
-  const [state, action, pending] = useActionState(loginAction, undefined)
+  const [state, action] = useFormState(loginAction, undefined)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -56,13 +69,7 @@ export default function LoginPage() {
                 className="w-full rounded-lg border-gray-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 text-sm tracking-widest"
               />
             </div>
-            <button
-              type="submit"
-              disabled={pending}
-              className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-60 text-white font-medium py-2.5 px-4 rounded-lg transition-colors text-sm mt-2"
-            >
-              {pending ? 'Connexion…' : 'Se connecter'}
-            </button>
+            <SubmitButton />
           </form>
         </div>
       </div>
