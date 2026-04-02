@@ -1,0 +1,5 @@
+[phases.install]
+cmds = []
+
+[phases.build]
+cmds = ["cd ../.. && npm ci && cd apps/api && npx prisma generate && npm run build"]
