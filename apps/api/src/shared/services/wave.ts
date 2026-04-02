@@ -60,7 +60,7 @@ export async function getStatutPayoutBatch(batchId: string) {
     throw new Error(`Wave statut erreur ${res.status}: ${body}`)
   }
 
-  return res.json()
+  return res.json() as Promise<{ id: string; status: string; [key: string]: unknown }>
 }
 
 export async function reverserPayout(payoutId: string) {
