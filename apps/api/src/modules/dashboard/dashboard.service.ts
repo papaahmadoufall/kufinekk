@@ -1,5 +1,5 @@
 import { prisma } from '../../shared/db'
-import type { StatutContrat } from '@prisma/client'
+import { StatutContrat } from '@prisma/client'
 import type { ResumeInput, SemaineInput } from './dashboard.schema'
 
 // ── Résumé du jour ─────────────────────────────────────────────────────────
