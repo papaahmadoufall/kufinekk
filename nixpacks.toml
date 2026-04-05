@@ -3,3 +3,4 @@ cmds = []
 
 [phases.build]
 cmds = ["npm ci && cd apps/api && npx prisma generate && npm run build"]
+cacheDirectories = ["apps/web/.next/cache"]
