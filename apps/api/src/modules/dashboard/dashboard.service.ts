@@ -1,5 +1,5 @@
 import { prisma } from '../../shared/db'
-import { StatutContrat } from '@prisma/client'
+import type { StatutContrat } from '@prisma/client'
 import type { ResumeInput, SemaineInput } from './dashboard.schema'
 
 // ── Résumé du jour ─────────────────────────────────────────────────────────
@@ -77,7 +77,7 @@ export async function getResume(entrepriseId: string, input: ResumeInput) {
     enCoursEntree,
     absentAujourdhui,
     agentsEnAttente,
-    totalJourneeXof: totalJourneeXof?._sum?.totalJournalierXof ?? 0,
+    totalJourneeXof: totalJourneeXof._sum?.totalJournalierXof ?? 0,
   }
 }
 

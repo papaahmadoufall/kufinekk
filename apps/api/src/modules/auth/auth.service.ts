@@ -126,7 +126,7 @@ export async function login(
   token: string
   utilisateur: { id: string; nom: string; role: string; entrepriseId: string }
 }> {
-  const { telephone, pin } = input
+  const { telephone, pin, motDePasse } = input
 
   const utilisateur = await prisma.utilisateur.findUnique({
     where: { telephone },
@@ -141,7 +141,16 @@ export async function login(
     throw new AppError(ERROR_CODES.FORBIDDEN, 'Compte entreprise désactivé', 403)
   }
 
-  const pinValide = await bcrypt.compare(pin, utilisateur.pinHash)
+  // Manager → motDePasse obligatoire / Pointeur → PIN obligatoire
+  if (utilisateur.role === 'MANAGER' && !motDePasse) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, 'Identifiants invalides', 401)
+  }
+  if (utilisateur.role === 'POINTEUR' && !pin) {
+    throw new AppError(ERROR_CODES.UNAUTHORIZED, 'Identifiants invalides', 401)
+  }
+
+  const credential = utilisateur.role === 'MANAGER' ? motDePasse! : pin!
+  const pinValide = await bcrypt.compare(credential, utilisateur.pinHash)
   if (!pinValide) {
     throw new AppError(ERROR_CODES.UNAUTHORIZED, 'Identifiants invalides', 401)
   }
