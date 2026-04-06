@@ -1,6 +1,8 @@
 import { getToken } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
-import { Users, UserCheck, Clock, AlertCircle, TrendingUp, Banknote } from 'lucide-react'
+import { formatXof } from '@/lib/copy'
+import { Users, UserCheck, Clock, AlertCircle, Banknote, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
 
 interface Resume {
   date: string
@@ -17,27 +19,12 @@ interface Semaine {
   semaineFin: string
   totalJourneesPointees: number
   masseSalarialeXof: number
-  detailParChantier: { chantierId: string; chantierNom: string; totalXof: number; nbJournees: number }[]
-}
-
-function StatCard({ label, value, sub, icon: Icon, color }: {
-  label: string; value: string | number; sub?: string
-  icon: React.ElementType; color: string
-}) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-gray-500">{label}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
-          {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-        </div>
-        <div className={`p-2 rounded-lg ${color}`}>
-          <Icon size={20} />
-        </div>
-      </div>
-    </div>
-  )
+  detailParChantier: {
+    chantierId: string
+    chantierNom: string
+    totalXof: number
+    nbJournees: number
+  }[]
 }
 
 export default async function DashboardPage() {
@@ -59,77 +46,168 @@ export default async function DashboardPage() {
   }
 
   const dateLabel = resume?.date
-    ? new Date(resume.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-    : ''
+    ? new Date(resume.date).toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+      })
+    : new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1 capitalize">{dateLabel}</p>
+    <div className="p-4 lg:p-8">
+
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-xl lg:text-2xl font-bold text-ink capitalize">{dateLabel}</h1>
+        <p className="text-sm text-ink-faint mt-0.5">Tableau de bord</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-sm text-red-700">
-          {error}
+        <div role="alert" className="alert-error mb-6">
+          {error} —{' '}
+          <a href="/dashboard" className="underline font-medium">Réessayer</a>
         </div>
       )}
 
+      {/* Raccourci pointage — bouton principal pour les pointeurs */}
+      <Link
+        href="/pointages/saisie"
+        className="flex items-center justify-between w-full bg-brand-600 hover:bg-brand-700 active:scale-[0.99] text-white rounded-card p-5 mb-6 transition-all shadow-float"
+      >
+        <div>
+          <p className="text-lg font-bold font-display uppercase tracking-wide">Pointer un agent</p>
+          <p className="text-sm text-brand-200 mt-0.5">Entrée ou sortie du chantier</p>
+        </div>
+        <Clock size={32} className="text-brand-200 flex-shrink-0" />
+      </Link>
+
       {/* Stats du jour */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Aujourd'hui</h2>
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Agents actifs" value={resume?.totalAgentsActifs ?? '—'} icon={Users} color="bg-blue-50 text-blue-600" />
-        <StatCard label="Présents" value={resume?.presentAujourdhui ?? '—'} icon={UserCheck} color="bg-green-50 text-green-600" />
-        <StatCard label="En cours" value={resume?.enCoursEntree ?? '—'} sub="Entrée sans sortie" icon={Clock} color="bg-amber-50 text-amber-600" />
-        <StatCard label="En attente" value={resume?.agentsEnAttente ?? '—'} sub="Contrats PROVISOIRE" icon={AlertCircle} color="bg-orange-50 text-orange-600" />
+      <h2 className="section-label">Aujourd'hui</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
         <StatCard
-          label="Total journée"
-          value={resume ? `${resume.totalJourneeXof.toLocaleString('fr-FR')} XOF` : '—'}
-          icon={Banknote}
-          color="bg-purple-50 text-purple-600"
+          label="Présents"
+          value={resume?.presentAujourdhui ?? '—'}
+          icon={UserCheck}
+          colorClass="bg-entree-light text-entree-text"
+          href="/pointages?statut=VALIDE"
+        />
+        <StatCard
+          label="En cours"
+          value={resume?.enCoursEntree ?? '—'}
+          sub="Sans sortie"
+          icon={Clock}
+          colorClass="bg-encours-light text-encours-text"
+          href="/pointages?statut=EN_COURS"
+        />
+        <StatCard
+          label="Absents"
+          value={resume?.absentAujourdhui ?? '—'}
+          icon={AlertCircle}
+          colorClass="bg-absent-light text-absent-text"
+          href="/pointages?statut=ABSENT"
+        />
+        <StatCard
+          label="En attente"
+          value={resume?.agentsEnAttente ?? '—'}
+          sub="Contrats provisoires"
+          icon={Users}
+          colorClass="bg-provisoire-light text-provisoire-text"
+          href="/agents"
         />
       </div>
 
+      {/* Total journée */}
+      {resume && (
+        <div className="card p-4 mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-brand-50 rounded-icon">
+              <Banknote size={20} className="text-brand-600" />
+            </div>
+            <div>
+              <p className="text-xs text-ink-faint font-medium">Total journée</p>
+              <p className="text-lg font-bold text-ink font-stat">{formatXof(resume.totalJourneeXof)}</p>
+            </div>
+          </div>
+          <span className="text-xs text-ink-faint">{resume.totalAgentsActifs} agents actifs</span>
+        </div>
+      )}
+
       {/* Stats semaine */}
-      <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Cette semaine</h2>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <StatCard label="Journées pointées" value={semaine?.totalJourneesPointees ?? '—'} icon={TrendingUp} color="bg-indigo-50 text-indigo-600" />
+      <h2 className="section-label">Cette semaine</h2>
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <StatCard
+          label="Journées pointées"
+          value={semaine?.totalJourneesPointees ?? '—'}
+          icon={TrendingUp}
+          colorClass="bg-sortie-light text-sortie-text"
+        />
         <StatCard
           label="Masse salariale"
-          value={semaine ? `${semaine.masseSalarialeXof.toLocaleString('fr-FR')} XOF` : '—'}
+          value={semaine ? formatXof(semaine.masseSalarialeXof) : '—'}
           icon={Banknote}
-          color="bg-emerald-50 text-emerald-600"
+          colorClass="bg-entree-light text-entree-text"
         />
       </div>
 
       {/* Détail par chantier */}
       {semaine && semaine.detailParChantier.length > 0 && (
         <>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Par chantier</h2>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="text-left px-5 py-3 font-medium text-gray-600">Chantier</th>
-                  <th className="text-right px-5 py-3 font-medium text-gray-600">Journées</th>
-                  <th className="text-right px-5 py-3 font-medium text-gray-600">Total XOF</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {semaine.detailParChantier.map((c) => (
-                  <tr key={c.chantierId} className="hover:bg-gray-50">
-                    <td className="px-5 py-3 font-medium text-gray-900">{c.chantierNom}</td>
-                    <td className="px-5 py-3 text-right text-gray-600">{c.nbJournees}</td>
-                    <td className="px-5 py-3 text-right font-medium text-gray-900">
-                      {c.totalXof.toLocaleString('fr-FR')} XOF
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h2 className="section-label">Par chantier</h2>
+          <div className="card overflow-hidden">
+            {semaine.detailParChantier.map((c, i) => (
+              <Link
+                key={c.chantierId}
+                href={`/chantiers/${c.chantierId}`}
+                className={`flex items-center justify-between px-4 py-3.5 hover:bg-surface-muted transition-colors ${
+                  i < semaine!.detailParChantier.length - 1 ? 'border-b border-surface-soft' : ''
+                }`}
+              >
+                <div>
+                  <p className="text-sm font-semibold text-ink">{c.chantierNom}</p>
+                  <p className="text-xs text-ink-faint mt-0.5">{c.nbJournees} journée{c.nbJournees > 1 ? 's' : ''}</p>
+                </div>
+                <p className="text-sm font-bold text-ink font-stat">{formatXof(c.totalXof)}</p>
+              </Link>
+            ))}
           </div>
         </>
       )}
     </div>
   )
+}
+
+function StatCard({
+  label,
+  value,
+  sub,
+  icon: Icon,
+  colorClass,
+  href,
+}: {
+  label: string
+  value: string | number
+  sub?: string
+  icon: React.ElementType
+  colorClass: string
+  href?: string
+}) {
+  const inner = (
+    <div className="stat-card">
+      <div className={`inline-flex p-2 rounded-icon mb-2 ${colorClass}`}>
+        <Icon size={16} />
+      </div>
+      <p className="stat-value leading-tight">{value}</p>
+      <p className="stat-label mt-0.5 leading-tight">{label}</p>
+      {sub && <p className="text-xs text-ink-faint mt-0.5">{sub}</p>}
+    </div>
+  )
+
+  if (href) {
+    return (
+      <Link href={href} className="block hover:opacity-80 transition-opacity active:scale-[0.98]">
+        {inner}
+      </Link>
+    )
+  }
+  return inner
 }

@@ -1,6 +1,10 @@
 import { getToken } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
-import { Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react'
+import { COPY, formatHeure, formatXof } from '@/lib/copy'
+import Badge from '@/components/Badge'
+import { StatusDot } from '@/components/Badge'
+import Link from 'next/link'
+import { Plus, ClipboardList } from 'lucide-react'
 
 interface Pointage {
   id: string
@@ -15,28 +19,18 @@ interface Pointage {
   }
 }
 
-const statutIcons: Record<string, React.ReactNode> = {
-  EN_COURS:  <Clock size={14} className="text-amber-500" />,
-  VALIDE:    <CheckCircle size={14} className="text-green-500" />,
-  CORRIGE:   <AlertCircle size={14} className="text-blue-500" />,
-  ABSENT:    <XCircle size={14} className="text-red-400" />,
-}
-
-const statutColors: Record<string, string> = {
-  EN_COURS: 'bg-amber-50 text-amber-700',
-  VALIDE:   'bg-green-50 text-green-700',
-  CORRIGE:  'bg-blue-50 text-blue-700',
-  ABSENT:   'bg-red-50 text-red-600',
-}
-
-function fmt(iso: string) {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
+const TABS = [
+  { key: '',          label: 'Tous' },
+  { key: 'VALIDE',    label: 'Présents' },
+  { key: 'EN_COURS',  label: 'En cours' },
+  { key: 'ABSENT',    label: 'Absents' },
+  { key: 'CORRIGE',   label: 'Corrigés' },
+]
 
 export default async function PointagesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ date?: string; contrat_id?: string }>
+  searchParams: Promise<{ date?: string; contrat_id?: string; statut?: string }>
 }) {
   const token = await getToken()
   const params = await searchParams
@@ -54,82 +48,143 @@ export default async function PointagesPage({
     error = e instanceof Error ? e.message : 'Erreur'
   }
 
+  // Filtre local par statut (tab)
+  const activeTab = params.statut ?? ''
+  const filtered = activeTab
+    ? pointages.filter((p) => p.statut === activeTab)
+    : pointages
+
+  // Date sélectionnée
+  const today = new Date().toISOString().split('T')[0]
+  const selectedDate = params.date ?? today
+  const dateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="p-4 lg:p-8">
+
+      {/* Header */}
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pointages</h1>
-          <p className="text-sm text-gray-500 mt-1">{pointages.length} entrée{pointages.length > 1 ? 's' : ''}</p>
+          <h1 className="text-xl lg:text-2xl font-bold text-ink">Présences</h1>
+          <p className="text-sm text-ink-faint mt-0.5 capitalize">{dateLabel}</p>
         </div>
-        {/* Filtre date */}
-        <form>
-          <input
-            type="date"
-            name="date"
-            defaultValue={params.date}
-            className="text-sm border border-gray-300 rounded-lg px-3 py-2 focus:border-brand-500 focus:ring-brand-500"
-          />
-        </form>
+        <div className="flex items-center gap-2">
+          {/* Filtre date */}
+          <form>
+            {params.statut && (
+              <input type="hidden" name="statut" value={params.statut} />
+            )}
+            <input
+              type="date"
+              name="date"
+              defaultValue={selectedDate}
+              className="h-11 rounded-btn border border-surface-soft bg-surface-card px-3 text-sm text-ink focus:border-brand-600 focus:ring-brand-600"
+            />
+          </form>
+          {/* Bouton Pointer */}
+          <Link
+            href="/pointages/saisie"
+            className="flex items-center justify-center gap-2 h-11 px-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-btn transition-colors"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Pointer</span>
+          </Link>
+        </div>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-sm text-red-700">{error}</div>
+        <div role="alert" className="alert-error mb-5">
+          {error}
+        </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b border-gray-200">
-            <tr>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Agent</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Chantier</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Date</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Entrée</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Sortie</th>
-              <th className="text-right px-5 py-3 font-medium text-gray-600">Total XOF</th>
-              <th className="text-left px-5 py-3 font-medium text-gray-600">Statut</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {pointages.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-5 py-10 text-center text-gray-400">
-                  Aucun pointage
-                </td>
-              </tr>
-            ) : (
-              pointages.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-5 py-3">
-                    <div className="font-medium text-gray-900">
-                      {p.contrat.agent.prenom} {p.contrat.agent.nom}
-                    </div>
-                    <div className="text-xs text-gray-400 font-mono">{p.contrat.agent.matricule}</div>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600">{p.contrat.chantier.nom}</td>
-                  <td className="px-5 py-3 text-gray-600">
-                    {new Date(p.dateJournee).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td className="px-5 py-3 text-gray-600 font-mono">{fmt(p.heureEntree)}</td>
-                  <td className="px-5 py-3 text-gray-600 font-mono">
-                    {p.heureSortie ? fmt(p.heureSortie) : <span className="text-amber-500">En cours</span>}
-                  </td>
-                  <td className="px-5 py-3 text-right font-medium text-gray-900">
-                    {p.totalJournalierXof != null
-                      ? `${p.totalJournalierXof.toLocaleString('fr-FR')} XOF`
-                      : <span className="text-gray-400">—</span>}
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${statutColors[p.statut] ?? ''}`}>
-                      {statutIcons[p.statut]}
-                      {p.statut}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      {/* Tabs statuts */}
+      <div className="flex gap-1 mb-5 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0">
+        {TABS.map(({ key, label }) => {
+          const count = key
+            ? pointages.filter((p) => p.statut === key).length
+            : pointages.length
+          const isActive = activeTab === key
+
+          // Construire href avec params existants
+          const href = new URLSearchParams({
+            ...(params.date ? { date: params.date } : {}),
+            ...(key ? { statut: key } : {}),
+          }).toString()
+
+          return (
+            <Link
+              key={key}
+              href={`/pointages${href ? '?' + href : ''}`}
+              className={`flex-shrink-0 flex items-center gap-1.5 h-9 px-3.5 rounded-chip text-sm font-semibold transition-colors ${
+                isActive
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-surface-card text-ink-muted border border-surface-soft hover:bg-surface-muted'
+              }`}
+            >
+              {label}
+              <span className={`text-xs ${isActive ? 'text-brand-200' : 'text-ink-faint'}`}>
+                {count}
+              </span>
+            </Link>
+          )
+        })}
       </div>
+
+      {/* Liste pointages — cards */}
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center py-16 text-center">
+          <div className="w-14 h-14 bg-surface-muted rounded-card flex items-center justify-center mb-4">
+            <ClipboardList size={24} className="text-ink-faint" />
+          </div>
+          <p className="font-semibold text-ink">{COPY.empty.presences.title}</p>
+          <p className="text-sm text-ink-faint mt-1">{COPY.empty.presences.body}</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map((p) => (
+            <div
+              key={p.id}
+              className="card p-4 flex items-center gap-3"
+            >
+              {/* Statut dot */}
+              <StatusDot statut={p.statut} />
+
+              {/* Info agent */}
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-ink truncate">
+                  {p.contrat.agent.prenom} {p.contrat.agent.nom}
+                </p>
+                <p className="text-meta text-ink-muted truncate">
+                  {p.contrat.chantier.nom} · <span className="matricule">{p.contrat.agent.matricule}</span>
+                </p>
+              </div>
+
+              {/* Heures + montant */}
+              <div className="text-right flex-shrink-0">
+                <p className="text-sm font-semibold text-ink">
+                  {formatHeure(p.heureEntree)}
+                  {p.heureSortie && (
+                    <span className="text-ink-faint"> → {formatHeure(p.heureSortie)}</span>
+                  )}
+                  {!p.heureSortie && (
+                    <span className="text-encours text-xs font-medium ml-1">en cours</span>
+                  )}
+                </p>
+                {p.totalJournalierXof != null ? (
+                  <p className="text-xs text-ink-muted font-stat">{formatXof(p.totalJournalierXof)}</p>
+                ) : (
+                  <Badge statut={p.statut} />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

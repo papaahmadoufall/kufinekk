@@ -3,7 +3,154 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    /* Fond crème chaud Kufinekk */
+    background-color: #fff9ed;
+    color: #1f1c0f;
+    font-family: var(--font-body), 'Manrope', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Touch targets minimum 44px */
+  button, [role="button"], a {
+    min-height: 44px;
+  }
+
+  /* Titres — Barlow Condensed par défaut */
+  h1, h2, h3 {
+    font-family: var(--font-display), 'Barlow Condensed', Impact, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* ── Fond blueprint (motif points Kufinekk) ─────────────────────────── */
+  .blueprint-bg {
+    background-color: #f5edd9;
+    background-image: radial-gradient(#e3bfb3 0.5px, transparent 0.5px);
+    background-size: 24px 24px;
+  }
+
+  .app-bg {
+    background-color: #fff9ed;
+    background-image: radial-gradient(#e3bfb3 0.4px, transparent 0.4px);
+    background-size: 28px 28px;
+  }
+
+  /* ── Typographie display ─────────────────────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display), 'Barlow Condensed', Impact, sans-serif;
+  }
+  .font-stat {
+    font-family: var(--font-mono-sans), 'Space Grotesk', sans-serif;
+  }
+  .font-code {
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+  }
+
+  /* ── Boutons ─────────────────────────────────────────────────────────── */
+  .btn-primary {
+    @apply flex items-center justify-center gap-2 h-btn-primary w-full rounded-btn
+           bg-brand-600 px-6 text-action font-display uppercase tracking-wide text-white
+           transition-all duration-150 hover:bg-brand-700 active:scale-[0.98]
+           disabled:opacity-50 shadow-float;
+  }
+
+  .btn-secondary {
+    @apply flex items-center justify-center gap-2 h-btn-secondary rounded-btn
+           border-2 border-surface-soft bg-surface-card px-5 text-sm font-semibold
+           text-ink transition-all duration-150 hover:border-brand-200 hover:bg-brand-50
+           active:scale-[0.98];
+  }
+
+  .btn-dark {
+    @apply flex items-center justify-center gap-2 h-btn-primary w-full rounded-btn
+           bg-dark px-6 text-action font-display uppercase tracking-wide text-white
+           transition-all duration-150 hover:bg-dark-deep active:scale-[0.98];
+  }
+
+  .btn-entree {
+    @apply flex items-center justify-center gap-2 h-btn-primary w-full rounded-btn
+           bg-entree px-6 text-action text-white transition-all duration-150
+           hover:bg-entree-deep active:scale-[0.98];
+  }
+
+  .btn-sortie {
+    @apply flex items-center justify-center gap-2 h-btn-primary w-full rounded-btn
+           bg-sortie px-6 text-action text-white transition-all duration-150
+           hover:bg-sortie-text active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply flex items-center justify-center gap-2 h-btn-secondary rounded-btn
+           border-2 border-absent bg-surface-card px-5 text-sm font-semibold
+           text-absent transition-all duration-150 hover:bg-absent-light active:scale-[0.98];
+  }
+
+  /* ── Cards ───────────────────────────────────────────────────────────── */
+  .card {
+    @apply bg-surface-card rounded-card shadow-card border border-surface-soft;
+  }
+
+  .card-dark {
+    @apply bg-dark rounded-card;
+  }
+
+  /* Card agent dans les listes */
+  .agent-card {
+    @apply flex items-center gap-3 min-h-card rounded-card bg-surface-card
+           border border-surface-soft p-4 shadow-card transition-all duration-150
+           hover:border-brand-200 hover:shadow-float active:scale-[0.99];
+  }
+
+  /* ── Inputs terrain ──────────────────────────────────────────────────── */
+  .input-field {
+    @apply block w-full rounded-btn border-surface-soft bg-surface-muted py-3 px-4
+           text-base text-ink shadow-none
+           focus:border-brand-600 focus:ring-brand-600 focus:bg-white
+           placeholder:text-ink-faint;
+  }
+
+  /* ── Sections labels ─────────────────────────────────────────────────── */
+  .section-label {
+    @apply text-label font-display uppercase tracking-widest text-ink-faint mb-3;
+  }
+
+  /* ── Stat card ───────────────────────────────────────────────────────── */
+  .stat-card {
+    @apply card p-4 flex flex-col gap-1;
+  }
+
+  .stat-value {
+    @apply font-stat text-stat-md text-ink;
+  }
+
+  .stat-label {
+    @apply text-label uppercase text-ink-faint;
+  }
+
+  /* ── Matricule / code ────────────────────────────────────────────────── */
+  .matricule {
+    @apply font-code text-sm text-ink-muted tracking-wider;
+  }
+
+  /* ── Chip / pill ─────────────────────────────────────────────────────── */
+  .chip {
+    @apply inline-flex items-center h-8 px-3 rounded-chip text-xs font-semibold;
+  }
+
+  /* ── Avatar initiales ────────────────────────────────────────────────── */
+  .avatar-initials {
+    @apply flex items-center justify-center rounded-icon flex-shrink-0
+           bg-brand-100 text-brand-700 font-display font-bold uppercase;
+  }
+
+  /* ── Erreur ──────────────────────────────────────────────────────────── */
+  .alert-error {
+    @apply bg-absent-light border border-absent rounded-card px-4 py-3 text-sm text-absent-text;
   }
 }
