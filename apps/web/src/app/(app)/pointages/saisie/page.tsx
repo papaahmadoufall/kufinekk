@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useTransition, useCallback } from 'react'
+import { useState, useRef, useTransition, useCallback, useEffect } from 'react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import {
@@ -115,7 +115,20 @@ export default function SaisiePage() {
   const [errorMsg, setErrorMsg] = useState('')
   const [isPending, startTransition] = useTransition()
   const [showScanner, setShowScanner] = useState(false)
+  const [now, setNow] = useState('')
+  const [nowTime, setNowTime] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Avoid hydration mismatch — render date/time only on client
+  useEffect(() => {
+    function tick() {
+      setNow(new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }))
+      setNowTime(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }))
+    }
+    tick()
+    const id = setInterval(tick, 10_000)
+    return () => clearInterval(id)
+  }, [])
 
   // Étape 1 → 2 : choisir le mode
   function handleChooseMode(m: Mode) {
@@ -267,14 +280,8 @@ export default function SaisiePage() {
         {step === 'choice' && (
           <div className="w-full space-y-4">
             <div className="text-center mb-8">
-              <p className="text-ink-faint text-sm">
-                {new Date().toLocaleDateString('fr-FR', {
-                  weekday: 'long', day: 'numeric', month: 'long'
-                })}
-              </p>
-              <p className="text-ink font-bold text-lg font-stat mt-1">
-                {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-              </p>
+              <p className="text-ink-faint text-sm">{now || '\u00A0'}</p>
+              <p className="text-ink font-bold text-lg font-stat mt-1">{nowTime || '\u00A0'}</p>
             </div>
 
             <ModeButton mode="entree" onClick={() => handleChooseMode('entree')} />
@@ -427,7 +434,7 @@ export default function SaisiePage() {
                   Heure de {mode === 'entree' ? 'l\'entrée' : 'la sortie'}
                 </p>
                 <p className="text-2xl font-bold text-ink font-stat">
-                  {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                  {nowTime || '\u00A0'}
                 </p>
               </div>
             </div>

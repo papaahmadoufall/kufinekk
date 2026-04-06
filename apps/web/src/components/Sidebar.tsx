@@ -10,7 +10,9 @@ import {
   FileText,
   LogOut,
   ClipboardList,
+  MoreHorizontal,
 } from 'lucide-react'
+import { useState } from 'react'
 import clsx from 'clsx'
 
 const navItems = [
@@ -21,7 +23,7 @@ const navItems = [
   { href: '/cycles-paie', label: 'Paie',             icon: FileText },
 ]
 
-// 4 items visibles dans la tab bar mobile
+// 4 items visibles dans la tab bar mobile + menu
 const tabItems = [
   { href: '/dashboard',   label: 'Accueil',    icon: LayoutDashboard },
   { href: '/agents',      label: 'Agents',     icon: Users },
@@ -31,6 +33,7 @@ const tabItems = [
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const [showMenu, setShowMenu] = useState(false)
 
   return (
     <>
@@ -97,6 +100,7 @@ export default function Sidebar() {
                 'flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors',
                 active ? 'text-brand-600' : 'text-ink-faint'
               )}
+              onClick={() => setShowMenu(false)}
             >
               <Icon
                 size={22}
@@ -106,7 +110,60 @@ export default function Sidebar() {
             </Link>
           )
         })}
+
+        {/* Menu / Plus — ouvre un panneau avec paie + déconnexion */}
+        <button
+          onClick={() => setShowMenu(!showMenu)}
+          className={clsx(
+            'flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors',
+            showMenu ? 'text-brand-600' : 'text-ink-faint'
+          )}
+        >
+          <MoreHorizontal size={22} />
+          Plus
+        </button>
       </nav>
+
+      {/* ── Menu mobile déroulant ── */}
+      {showMenu && (
+        <>
+          <div
+            className="lg:hidden fixed inset-0 z-40 bg-black/30"
+            onClick={() => setShowMenu(false)}
+          />
+          <div className="lg:hidden fixed bottom-16 inset-x-0 z-50 p-3 pb-1">
+            <div className="bg-surface-card rounded-card shadow-float border border-surface-soft overflow-hidden">
+              <Link
+                href="/cycles-paie"
+                onClick={() => setShowMenu(false)}
+                className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink hover:bg-surface-muted transition-colors"
+              >
+                <FileText size={18} className="text-ink-faint" />
+                Cycles de paie
+              </Link>
+              <Link
+                href="/utilisateurs"
+                onClick={() => setShowMenu(false)}
+                className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink hover:bg-surface-muted transition-colors border-t border-surface-soft"
+              >
+                <Users size={18} className="text-ink-faint" />
+                Utilisateurs
+              </Link>
+              <div className="border-t border-surface-soft">
+                <form action="/api/logout" method="POST">
+                  <button
+                    type="submit"
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-absent hover:bg-absent/5 transition-colors"
+                  >
+                    <LogOut size={18} />
+                    Déconnexion
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   )
 }
