@@ -11,16 +11,20 @@ import {
   LogOut,
   ClipboardList,
   MoreHorizontal,
+  UserCog,
+  BadgeCheck,
 } from 'lucide-react'
 import { useState } from 'react'
 import clsx from 'clsx'
 
 const navItems = [
-  { href: '/dashboard',   label: 'Tableau de bord', icon: LayoutDashboard },
-  { href: '/agents',      label: 'Agents',           icon: Users },
-  { href: '/chantiers',   label: 'Chantiers',        icon: HardHat },
-  { href: '/pointages',   label: 'Présences',        icon: Clock },
-  { href: '/cycles-paie', label: 'Paie',             icon: FileText },
+  { href: '/dashboard',     label: 'Tableau de bord', icon: LayoutDashboard },
+  { href: '/agents',        label: 'Agents',           icon: Users },
+  { href: '/chantiers',     label: 'Chantiers',        icon: HardHat },
+  { href: '/pointages',     label: 'Présences',        icon: Clock },
+  { href: '/cycles-paie',   label: 'Paie',             icon: FileText },
+  { href: '/badges',        label: 'Badges',           icon: BadgeCheck },
+  { href: '/utilisateurs',  label: 'Utilisateurs',     icon: UserCog },
 ]
 
 // 4 items visibles dans la tab bar mobile + menu
@@ -142,11 +146,19 @@ export default function Sidebar() {
                 Cycles de paie
               </Link>
               <Link
+                href="/badges"
+                onClick={() => setShowMenu(false)}
+                className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink hover:bg-surface-muted transition-colors border-t border-surface-soft"
+              >
+                <BadgeCheck size={18} className="text-ink-faint" />
+                Badges
+              </Link>
+              <Link
                 href="/utilisateurs"
                 onClick={() => setShowMenu(false)}
                 className="flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-ink hover:bg-surface-muted transition-colors border-t border-surface-soft"
               >
-                <Users size={18} className="text-ink-faint" />
+                <UserCog size={18} className="text-ink-faint" />
                 Utilisateurs
               </Link>
               <div className="border-t border-surface-soft">

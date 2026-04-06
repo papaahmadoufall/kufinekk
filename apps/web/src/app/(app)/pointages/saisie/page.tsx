@@ -46,32 +46,18 @@ interface SuccessData {
 
 // ── Helpers ───────────────────────────────────────────────
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://kufinekk-production.up.railway.app'
-
-async function searchAgent(telephone: string, token: string): Promise<AgentResult> {
-  const res = await fetch(
-    `${API_URL}/api/v1/agents/search?telephone=${encodeURIComponent(telephone)}`,
-    { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
-  )
+// Utilise le proxy Next.js — le token httpOnly est lu côté serveur
+async function searchAgent(telephone: string): Promise<AgentResult> {
+  const res = await fetch(`/api/proxy/agents/search?telephone=${encodeURIComponent(telephone)}`)
   const json = await res.json()
   if (!res.ok) throw new Error(json?.error?.message ?? COPY.errors.introuvable)
   return json.data
 }
 
-async function getCookie(name: string): Promise<string> {
-  if (typeof document === 'undefined') return ''
-  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
-  return match ? decodeURIComponent(match[1]) : ''
-}
-
-async function postPointage(
-  path: '/pointages/entree' | '/pointages/sortie',
-  matricule: string,
-  token: string
-) {
-  const res = await fetch(`${API_URL}/api/v1${path}`, {
+async function postPointage(path: 'pointages/entree' | 'pointages/sortie', matricule: string) {
+  const res = await fetch(`/api/proxy/${path}`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ matricule }),
   })
   const json = await res.json()
@@ -147,11 +133,10 @@ export default function SaisiePage() {
 
     startTransition(async () => {
       try {
-        const token = await getCookie('kfn_token')
         let tel = telephone.trim().replace(/\s/g, '')
         if (!tel.startsWith('+')) tel = '+221' + tel
 
-        const found = await searchAgent(tel, token)
+        const found = await searchAgent(tel)
         setAgent(found)
         setErrorMsg('')
         setStep('confirm')
@@ -167,9 +152,8 @@ export default function SaisiePage() {
 
     startTransition(async () => {
       try {
-        const token = await getCookie('kfn_token')
-        const path = mode === 'entree' ? '/pointages/entree' : '/pointages/sortie'
-        const result = await postPointage(path, matricule, token)
+        const path = mode === 'entree' ? 'pointages/entree' : 'pointages/sortie'
+        const result = await postPointage(path, matricule)
 
         const heure = formatHeure(
           mode === 'entree' ? result.heureEntree : result.heureSortie
@@ -202,9 +186,8 @@ export default function SaisiePage() {
 
     startTransition(async () => {
       try {
-        const token = await getCookie('kfn_token')
-        const path = mode === 'entree' ? '/pointages/entree' : '/pointages/sortie'
-        const result = await postPointage(path, agent.matricule, token)
+        const path = mode === 'entree' ? 'pointages/entree' : 'pointages/sortie'
+        const result = await postPointage(path, agent.matricule)
 
         const heure = formatHeure(
           mode === 'entree' ? result.heureEntree : result.heureSortie
@@ -333,7 +316,7 @@ export default function SaisiePage() {
 
             <form onSubmit={handleSearch} className="space-y-4">
               <div className="relative">
-                <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
+                <Phone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-faint pointer-events-none" />
                 <input
                   ref={inputRef}
                   type="tel"
@@ -341,7 +324,7 @@ export default function SaisiePage() {
                   value={telephone}
                   onChange={(e) => setTelephone(e.target.value)}
                   placeholder="77 123 45 67"
-                  className="input-field pl-12 text-lg"
+                  className="input-icon-left text-lg"
                   disabled={isPending}
                   autoFocus
                 />

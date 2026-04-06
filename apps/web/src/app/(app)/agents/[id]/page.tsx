@@ -2,8 +2,9 @@ import { getToken } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
 import { COPY, formatXof } from '@/lib/copy'
 import Badge from '@/components/Badge'
+import QrCodeCard from '@/components/QrCodeCard'
 import Link from 'next/link'
-import { ArrowLeft, Phone, MapPin, Briefcase, Calendar, QrCode } from 'lucide-react'
+import { ArrowLeft, Phone, MapPin, Briefcase, Calendar } from 'lucide-react'
 
 interface Contrat {
   id: string
@@ -82,16 +83,6 @@ export default async function AgentDetailPage({
                 <h1 className="text-xl font-bold text-ink">{agent.prenom} {agent.nom}</h1>
                 <p className="matricule text-base">{agent.matricule}</p>
               </div>
-              {agent.qrCodeUrl && (
-                <a
-                  href={agent.qrCodeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-3 bg-surface-muted rounded-icon hover:bg-surface-soft transition-colors"
-                >
-                  <QrCode size={24} className="text-ink-muted" />
-                </a>
-              )}
             </div>
 
             <div className="border-t border-surface-soft pt-4 space-y-2.5">
@@ -105,6 +96,18 @@ export default async function AgentDetailPage({
               </div>
             </div>
           </div>
+
+          {/* Badge / QR Code */}
+          {agent.qrCodeUrl && (
+            <div className="mb-4">
+              <QrCodeCard
+                matricule={agent.matricule}
+                qrCodeUrl={agent.qrCodeUrl}
+                nom={agent.nom}
+                prenom={agent.prenom}
+              />
+            </div>
+          )}
 
           {/* Contrat actif */}
           <h2 className="section-label">Contrat actif</h2>
