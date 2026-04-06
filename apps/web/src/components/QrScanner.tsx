@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
-import { Camera, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 interface QrScannerProps {
   onScan: (matricule: string) => void
@@ -11,37 +10,57 @@ interface QrScannerProps {
 
 export default function QrScanner({ onScan, onClose }: QrScannerProps) {
   const [error, setError] = useState<string | null>(null)
-  const scannerRef = useRef<Html5Qrcode | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const scannerRef = useRef<any>(null)
+  const onScanRef = useRef(onScan)
+  const stoppedRef = useRef(false)
+
+  // Keep callback ref in sync without re-running effect
+  onScanRef.current = onScan
 
   useEffect(() => {
-    const scannerId = 'qr-reader'
+    let cancelled = false
+    stoppedRef.current = false
 
-    const scanner = new Html5Qrcode(scannerId)
-    scannerRef.current = scanner
+    async function startScanner() {
+      try {
+        // Dynamic import to avoid SSR issues — html5-qrcode uses window/document at module level
+        const { Html5Qrcode } = await import('html5-qrcode')
+        if (cancelled) return
 
-    scanner
-      .start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          // Vérifier que c'est un matricule Kufinekk
-          const text = decodedText.trim()
-          if (/^KFN-\d{5}$/.test(text)) {
-            scanner.stop().catch(() => {})
-            onScan(text)
-          }
-        },
-        () => {} // ignore scan errors (no QR in frame)
-      )
-      .catch(() => {
-        setError('Impossible d\'accéder à la caméra. Vérifiez les permissions.')
-      })
+        const scanner = new Html5Qrcode('qr-reader')
+        scannerRef.current = scanner
+
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            const text = decodedText.trim()
+            if (/^KFN-\d{5}$/.test(text) && !stoppedRef.current) {
+              stoppedRef.current = true
+              scanner.stop().catch(() => {})
+              onScanRef.current(text)
+            }
+          },
+          () => {} // ignore scan errors (no QR in frame)
+        )
+      } catch {
+        if (!cancelled) {
+          setError('Impossible d\'accéder à la caméra. Vérifiez les permissions.')
+        }
+      }
+    }
+
+    startScanner()
 
     return () => {
-      scanner.stop().catch(() => {})
+      cancelled = true
+      stoppedRef.current = true
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {})
+        scannerRef.current = null
+      }
     }
-  }, [onScan])
+  }, [])
 
   return (
     <div className="fixed inset-0 z-50 bg-dark-deep/90 flex flex-col items-center justify-center">
@@ -55,7 +74,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
 
       {/* Scanner area */}
       <div className="w-72 h-72 rounded-card overflow-hidden relative">
-        <div id="qr-reader" ref={containerRef} className="w-full h-full" />
+        <div id="qr-reader" className="w-full h-full" />
         {/* Corner markers */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-brand-600 rounded-tl-lg" />
