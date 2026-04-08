@@ -13,6 +13,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
   const scannerRef = useRef<any>(null)
   const onScanRef = useRef(onScan)
   const stoppedRef = useRef(false)
+  const startedRef = useRef(false)
 
   // Keep callback ref in sync without re-running effect
   onScanRef.current = onScan
@@ -20,6 +21,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
   useEffect(() => {
     let cancelled = false
     stoppedRef.current = false
+    startedRef.current = false
 
     async function startScanner() {
       try {
@@ -43,6 +45,12 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
           },
           () => {} // ignore scan errors (no QR in frame)
         )
+
+        if (cancelled) {
+          scanner.stop().catch(() => {})
+          return
+        }
+        startedRef.current = true
       } catch {
         if (!cancelled) {
           setError('Impossible d\'accéder à la caméra. Vérifiez les permissions.')
@@ -55,7 +63,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
     return () => {
       cancelled = true
       stoppedRef.current = true
-      if (scannerRef.current) {
+      if (scannerRef.current && startedRef.current) {
         scannerRef.current.stop().catch(() => {})
         scannerRef.current = null
       }

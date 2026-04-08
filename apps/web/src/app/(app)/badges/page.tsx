@@ -40,7 +40,7 @@ export default async function BadgesPage({
   try {
     const [agentsRes, chantiersRes] = await Promise.all([
       apiFetch<{ data: Agent[] }>(`/agents?${query.toString()}`, { token }),
-      apiFetch<{ data: Chantier[] }>('/chantiers?statut=actif', { token }),
+      apiFetch<{ data: Chantier[] }>('/chantiers?statut=ACTIF', { token }),
     ])
     agents = agentsRes.data
     chantiers = chantiersRes.data
