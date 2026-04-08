@@ -39,6 +39,7 @@ export default function QrScanner({ onScan, onClose }: QrScannerProps) {
             const text = decodedText.trim()
             if (/^KFN-\d{5}$/.test(text) && !stoppedRef.current) {
               stoppedRef.current = true
+              scannerRef.current = null  // prevent cleanup double-stop
               scanner.stop().catch(() => {})
               onScanRef.current(text)
             }
