@@ -24,6 +24,10 @@ async function handler(req: NextRequest, { params }: { params: Promise<{ path: s
   const init: RequestInit = {
     method: req.method,
     headers,
+    // Réutiliser la connexion TCP vers Railway
+    keepalive: true,
+    // Les appels proxy sont des actions — pas de cache
+    cache: 'no-store',
   }
 
   if (req.method !== 'GET' && req.method !== 'HEAD') {

@@ -3,6 +3,7 @@ import corsPlugin from '@fastify/cors'
 import jwtPlugin from '@fastify/jwt'
 import rateLimitPlugin from '@fastify/rate-limit'
 import sensiblePlugin from '@fastify/sensible'
+import compressPlugin from '@fastify/compress'
 
 import { registerErrorHandler } from './shared/middleware/error-handler'
 import { authRoutes } from './modules/auth/auth.routes'
@@ -23,6 +24,13 @@ export async function buildApp() {
   })
 
   // ── Plugins ────────────────────────────────────────────────────────────────
+
+  // Compression gzip/deflate sur toutes les réponses JSON
+  await app.register(compressPlugin, {
+    global: true,
+    encodings: ['gzip', 'deflate'],
+    threshold: 512, // compresser seulement au-delà de 512 bytes
+  })
 
   await app.register(sensiblePlugin)
 
