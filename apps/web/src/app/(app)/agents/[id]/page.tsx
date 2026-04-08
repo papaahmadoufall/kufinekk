@@ -115,7 +115,9 @@ export default async function AgentDetailPage({
             <div className="card p-5 mb-4">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <p className="font-bold text-ink text-base">{contratActif.poste}</p>
+                  <Link href={`/contrats/${contratActif.id}`} className="font-bold text-ink text-base hover:text-brand-600">
+                    {contratActif.poste}
+                  </Link>
                   <div className="flex items-center gap-1.5 text-sm text-ink-muted mt-0.5">
                     <MapPin size={14} className="text-ink-faint" />
                     <Link href={`/chantiers/${contratActif.chantier.id}`} className="hover:text-brand-600">
@@ -166,7 +168,7 @@ export default async function AgentDetailPage({
               <h2 className="section-label">Historique</h2>
               <div className="space-y-2">
                 {contratsTermines.map((c) => (
-                  <div key={c.id} className="card p-4 flex items-center gap-3">
+                  <Link key={c.id} href={`/contrats/${c.id}`} className="card p-4 flex items-center gap-3 hover:bg-surface-muted transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-ink truncate">{c.poste}</p>
                       <p className="text-meta text-ink-muted truncate">
@@ -175,7 +177,7 @@ export default async function AgentDetailPage({
                       </p>
                     </div>
                     <Badge statut={c.statut} />
-                  </div>
+                  </Link>
                 ))}
               </div>
             </>

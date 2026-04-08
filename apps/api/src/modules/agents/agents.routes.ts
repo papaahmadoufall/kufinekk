@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { createAgentSchema, updateAgentSchema, listAgentsSchema, searchAgentSchema } from './agents.schema'
-import { searchAgent, listAgents, getAgent, createAgent, updateAgent } from './agents.service'
+import { searchAgent, listAgents, getAgent, createAgent, updateAgent, regenererQrCode } from './agents.service'
 import { authMiddleware } from '../../shared/middleware/auth'
 import { entrepriseScopeMiddleware } from '../../shared/middleware/entreprise-scope'
 import { requireRole } from '../../shared/middleware/rbac'
@@ -70,6 +70,23 @@ export async function agentsRoutes(app: FastifyInstance) {
 
     try {
       const data = await getAgent(id, entrepriseId)
+      return reply.code(200).send({ data })
+    } catch (err) {
+      if (err instanceof AppError) {
+        return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message } })
+      }
+      throw err
+    }
+  })
+
+  // ── POST /:id/regenerer-qr (Manager uniquement) ──────────────────────────
+
+  app.post('/:id/regenerer-qr', { preHandler: [...preHandler, requireRole('MANAGER')] }, async (req, reply) => {
+    const { entrepriseId } = req.user as { entrepriseId: string }
+    const { id } = req.params as { id: string }
+
+    try {
+      const data = await regenererQrCode(id, entrepriseId)
       return reply.code(200).send({ data })
     } catch (err) {
       if (err instanceof AppError) {

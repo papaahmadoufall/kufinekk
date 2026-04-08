@@ -9,6 +9,37 @@ import type {
   TerminerContratInput,
 } from './contrats.schema'
 
+export async function getContrat(id: string, entrepriseId: string) {
+  const contrat = await prisma.contrat.findFirst({
+    where: { id, entrepriseId },
+    include: {
+      agent: {
+        select: {
+          id: true,
+          matricule: true,
+          telephone: true,
+          nom: true,
+          prenom: true,
+          qrCodeUrl: true,
+          createdAt: true,
+        },
+      },
+      chantier: {
+        select: { id: true, nom: true, adresse: true },
+      },
+      validePar: {
+        select: { id: true, nom: true },
+      },
+    },
+  })
+
+  if (!contrat) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Contrat introuvable', 404)
+  }
+
+  return contrat
+}
+
 export async function createContrat(entrepriseId: string, input: CreateContratInput, valideParId: string) {
   // Vérifier que l'agent et le chantier appartiennent à l'entreprise
   const [agent, chantier] = await Promise.all([

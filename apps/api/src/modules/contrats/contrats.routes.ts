@@ -6,6 +6,7 @@ import {
   terminerContratSchema,
 } from './contrats.schema'
 import {
+  getContrat,
   createContrat,
   updateContrat,
   validerContrat,
@@ -21,6 +22,23 @@ import { AppError } from '../../shared/errors/AppError'
 export async function contratsRoutes(app: FastifyInstance) {
   const preHandler = [authMiddleware, entrepriseScopeMiddleware]
   const managerOnly = [...preHandler, requireRole('MANAGER')]
+
+  // ── GET /:id ──────────────────────────────────────────────────────────────
+
+  app.get('/:id', { preHandler }, async (req, reply) => {
+    const { entrepriseId } = req.user as { entrepriseId: string }
+    const { id } = req.params as { id: string }
+
+    try {
+      const data = await getContrat(id, entrepriseId)
+      return reply.code(200).send({ data })
+    } catch (err) {
+      if (err instanceof AppError) {
+        return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message } })
+      }
+      throw err
+    }
+  })
 
   // ── POST / ────────────────────────────────────────────────────────────────
 

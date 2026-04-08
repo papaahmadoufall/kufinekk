@@ -154,6 +154,29 @@ export async function createAgent(entrepriseId: string, input: CreateAgentInput)
   return agent
 }
 
+export async function regenererQrCode(id: string, entrepriseId: string) {
+  const agent = await prisma.agent.findFirst({
+    where: { id, contrats: { some: { entrepriseId } } },
+    select: { id: true, matricule: true },
+  })
+
+  if (!agent) {
+    throw new AppError(ERROR_CODES.NOT_FOUND, 'Agent introuvable', 404)
+  }
+
+  const qrCodeUrl = await genererEtStockerQrCode(agent.matricule)
+
+  return prisma.agent.update({
+    where: { id },
+    data: { qrCodeUrl },
+    select: {
+      id: true,
+      matricule: true,
+      qrCodeUrl: true,
+    },
+  })
+}
+
 export async function updateAgent(id: string, entrepriseId: string, input: UpdateAgentInput) {
   const agent = await prisma.agent.findFirst({
     where: { id, contrats: { some: { entrepriseId } } },
