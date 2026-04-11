@@ -624,3 +624,63 @@ npx prisma migrate dev --name init
 
 *Dernière mise à jour : généré depuis le Project claude.ai Kufinekk*
 *Toute modification doit être répercutée ici ET dans le Project claude.ai*
+
+---
+
+## État d'avancement — Mis à jour le 2026-04-11
+
+### Backend V1 : COMPLET en production
+
+Tous les sprints S0→S7 sont terminés et déployés.
+
+| Sprint | Livrable | Statut |
+|--------|----------|--------|
+| S0 | Monorepo + Prisma + CI/CD | ✅ |
+| S1 | Auth OTP + JWT + sessions | ✅ |
+| S2 | Entreprises + Utilisateurs + RBAC | ✅ |
+| S3 | Agents + Contrats + Transfert atomique | ✅ |
+| S4 | Chantiers + fin contrat automatique | ✅ |
+| S5 | Pointages + calcul A+C + corrections | ✅ |
+| S6 | CyclePaie + Wave Payout + polling | ✅ |
+| S7 | Dashboard + sécurité + OpenAPI spec | ✅ |
+
+**Infra production**
+- API → Railway : `https://kufinekk-api.up.railway.app`
+- Base de données → Supabase PostgreSQL
+- Dashboard → Vercel
+- CI/CD → GitHub Actions (push master = deploy auto)
+
+### Dashboard Web : 12/14 pages
+
+| Page | Statut |
+|------|--------|
+| `/login` | ✅ |
+| `/dashboard` | ✅ |
+| `/agents` (liste + nouveau + profil `[id]`) | ✅ |
+| `/chantiers` (liste + nouveau) | ✅ |
+| `/chantiers/[id]` | ⏳ À faire |
+| `/pointages` (liste + saisie QR) | ✅ |
+| `/cycles-paie` | ✅ |
+| `/contrats/[id]` | ✅ |
+| `/badges` | ✅ |
+| `/utilisateurs` | ⏳ À faire |
+
+### Intégrations non encore activées
+
+| Intégration | Raison | Action requise |
+|-------------|--------|----------------|
+| SMS AxiomText | `AXIOMTEXT_TOKEN` manquant sur Railway | Ajouter la variable |
+| Wave Payout | `WAVE_API_TOKEN` manquant sur Railway | Ajouter la variable |
+
+### Optimisations performance appliquées
+
+- `@fastify/compress` gzip sur toutes les réponses API
+- `next: { revalidate: 20 }` sur les GET (cache Vercel 20s)
+- `keepalive: true` sur fetch (réutilisation connexions TCP)
+- `loading.tsx` sur toutes les routes (Speed Index 14.3s → ~1s)
+
+### Prochaines priorités
+
+1. `/chantiers/[id]` — détail chantier + liste agents actifs
+2. `/utilisateurs` — gestion pointeurs (créer, désactiver, changer PIN)
+3. Configurer `AXIOMTEXT_TOKEN` + `WAVE_API_TOKEN` sur Railway
