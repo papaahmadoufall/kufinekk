@@ -24,3 +24,20 @@ export async function clearToken() {
   const store = await cookies()
   store.delete(COOKIE)
 }
+
+/** Décode le payload JWT (sans vérification — pour l'UI uniquement) */
+export async function getUser(): Promise<{
+  sub: string
+  entrepriseId: string
+  role?: string
+  type: string
+} | null> {
+  const token = await getToken()
+  if (!token) return null
+  try {
+    const payload = token.split('.')[1]
+    return JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8'))
+  } catch {
+    return null
+  }
+}

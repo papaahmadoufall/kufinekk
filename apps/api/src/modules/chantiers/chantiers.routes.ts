@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
-import { createChantierSchema, updateChantierSchema, listChantiersSchema } from './chantiers.schema'
-import { listChantiers, getChantier, createChantier, updateChantier } from './chantiers.service'
+import { createChantierSchema, updateChantierSchema, listChantiersSchema, presencesQuerySchema } from './chantiers.schema'
+import { listChantiers, getChantier, createChantier, updateChantier, getPresences } from './chantiers.service'
 import { authMiddleware } from '../../shared/middleware/auth'
 import { entrepriseScopeMiddleware } from '../../shared/middleware/entreprise-scope'
 import { requireRole } from '../../shared/middleware/rbac'
@@ -50,6 +50,30 @@ export async function chantiersRoutes(app: FastifyInstance) {
 
     try {
       const data = await getChantier(id, entrepriseId)
+      return reply.code(200).send({ data })
+    } catch (err) {
+      if (err instanceof AppError) {
+        return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message } })
+      }
+      throw err
+    }
+  })
+
+  // ── GET /:id/presences ────────────────────────────────────────────────────
+
+  app.get('/:id/presences', { preHandler }, async (req, reply) => {
+    const { entrepriseId } = req.user as { entrepriseId: string }
+    const { id } = req.params as { id: string }
+
+    const result = presencesQuerySchema.safeParse(req.query)
+    if (!result.success) {
+      return reply.code(422).send({
+        error: { code: 'validation_error', message: 'Paramètres invalides', details: result.error.issues },
+      })
+    }
+
+    try {
+      const data = await getPresences(id, entrepriseId, result.data.semaine)
       return reply.code(200).send({ data })
     } catch (err) {
       if (err instanceof AppError) {

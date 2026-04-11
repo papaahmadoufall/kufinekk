@@ -2,7 +2,7 @@
 > Source de vérité partagée entre Claude Code et Cowork.
 > Mettre à jour à chaque milestone. Commiter sur master.
 
-**Dernière mise à jour : 2026-04-11**
+**Dernière mise à jour : 2026-04-11 — `/chantiers/[id]` implémenté**
 
 ---
 
@@ -50,7 +50,7 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 | Profil agent | `/agents/[id]` | ✅ | QR + contrat + historique |
 | Liste chantiers | `/chantiers` | ✅ | Grid cards |
 | Nouveau chantier | `/chantiers/nouveau` | ✅ | Formulaire |
-| **Détail chantier** | `/chantiers/[id]` | ⏳ À FAIRE | Priorité 1 |
+| **Détail chantier** | `/chantiers/[id]` | ✅ | Calendrier présences + stats + corrections |
 | Liste pointages | `/pointages` | ✅ | Tabs statut + filtre date |
 | Saisie pointage | `/pointages/saisie` | ✅ | Flow 4 étapes + QR scanner |
 | Cycles de paie | `/cycles-paie` | ✅ | Liste + résumé |
@@ -58,7 +58,7 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 | Badges QR | `/badges` | ✅ | Grille imprimable |
 | **Utilisateurs** | `/utilisateurs` | ⏳ À FAIRE | Priorité 2 |
 
-**Avancement : 12/14 pages (86%)**
+**Avancement : 13/14 pages (93%)**
 
 ---
 
@@ -74,19 +74,22 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 
 ## Prochaines priorités
 
-### Priorité 1 — `/chantiers/[id]`
-- Détail du chantier (nom, adresse, dates, seuil heures)
-- Liste des agents actifs sur ce chantier (contrats ACTIF)
-- Stats rapides (présents aujourd'hui, masse salariale semaine)
-- Bouton "Fermer le chantier"
-
-### Priorité 2 — `/utilisateurs`
+### Priorité 1 — `/utilisateurs` ← PROCHAINE PRIORITÉ
 - Liste des pointeurs/managers
 - Créer un nouveau pointeur
 - Désactiver un compte
 - Réinitialiser le PIN
 
-### Priorité 3 — Activer les intégrations
+### Priorité 3 — Export PDF Fiche de Paie
+- Spec complète : `SPEC_fiche_de_paie.md`
+- PDF par cycle de paie, tous agents dans un tableau
+- En-tête entreprise (logo R2, nom, adresse, email)
+- Tableau : nom · matricule · poste · jours · taux · heures supp (qté + montant) · salaire net · moyen paiement · date
+- Endpoint `GET /cycles-paie/:id/export-pdf` (MANAGER uniquement)
+- À ajouter : champ `moyenPaiement` + `datePaiement` sur `CyclePaie`
+- À vérifier : upload logo sur profil entreprise
+
+### Priorité 4 — Activer les intégrations
 - Configurer `AXIOMTEXT_TOKEN` sur Railway → SMS actifs
 - Configurer `WAVE_API_TOKEN` sur Railway → paiements Wave actifs
 
@@ -117,6 +120,23 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 | R2_* (4 variables) | ✅ Configurées |
 | **AXIOMTEXT_TOKEN** | ❌ Manquante |
 | **WAVE_API_TOKEN** | ❌ Manquante |
+
+---
+
+## Nouvelles features identifiées (session 11 avril 2026)
+
+| Feature | Décision | Version |
+|---------|----------|---------|
+| Import Excel agents | Enrôlement uniquement (one-shot) | V1 enrichie |
+| Calendrier présence hebdo | Intégré dans `/chantiers/[id]` | V1 — P1 |
+| Fiche de présence PDF | Export depuis `/chantiers/[id]` | V1 enrichie |
+| Résumé de paie PDF | Spec dans `SPEC_fiche_de_paie.md` | V1 enrichie |
+| Workflow approbation paie | Gestionnaire / Validateur — à valider pilote | V2 |
+| Historique paiements archivé | Stockage R2 à validation cycle | V1 enrichie |
+| Flow d'enrôlement self-serve | Après 10 onboardings manuels | V2 |
+
+**Règle décidée :** Import Excel = enrôlement uniquement. Post-enrôlement = QR obligatoire.
+**3 documents distincts :** Fiche de présence (opérationnel) · Résumé de paie (validation) · Fiche de paie (archive post-paiement)
 
 ---
 
