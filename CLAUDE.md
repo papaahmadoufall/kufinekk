@@ -627,6 +627,22 @@ npx prisma migrate dev --name init
 
 ---
 
+## Mémoire partagée Claude Code × Cowork
+
+Les fichiers de référence vivants du projet sont dans `docs/` :
+
+| Fichier | Contenu |
+|---------|---------|
+| `docs/PRD.md` | Vision produit, personas, features V1/V2/V3, métriques, modèle éco |
+| `docs/ITERATIONS.md` | Décisions techniques par sprint + pourquoi + alternatives rejetées |
+| `docs/STATUS.md` | État actuel : infra, pages, intégrations, next steps, bugs connus |
+| `docs/templates/` | Templates vierges réutilisables pour nouveaux projets |
+
+**Ces fichiers sont uploadés dans le Project claude.ai pour Cowork.**
+**`docs/STATUS.md` est la source de vérité — le mettre à jour à chaque milestone.**
+
+---
+
 ## État d'avancement — Mis à jour le 2026-04-11
 
 ### Backend V1 : COMPLET en production
