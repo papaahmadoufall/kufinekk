@@ -1,5 +1,6 @@
 import type { Config } from 'tailwindcss'
 import forms from '@tailwindcss/forms'
+import plugin from 'tailwindcss/plugin'
 
 const config: Config = {
   content: ['./src/**/*.{ts,tsx}'],
@@ -8,10 +9,12 @@ const config: Config = {
       fontFamily: {
         sans:    ['var(--font-body)', 'Manrope', 'system-ui', 'sans-serif'],
         display: ['var(--font-display)', 'Barlow Condensed', 'Impact', 'sans-serif'],
+        heading: ['var(--font-display)', 'Barlow Condensed', 'Impact', 'sans-serif'],
         stat:    ['var(--font-mono-sans)', 'Space Grotesk', 'sans-serif'],
         mono:    ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
       },
       colors: {
+        // ── Kufinekk palette ───────────────────────────
         brand: {
           50:  '#fff9ed',
           100: '#ffdbcf',
@@ -69,6 +72,41 @@ const config: Config = {
           light:   '#ffdbcf',
           text:    '#653d1e',
         },
+
+        // ── Shadcn semantic tokens (via CSS vars in globals.css) ──
+        border:      'hsl(var(--border))',
+        input:       'hsl(var(--input))',
+        ring:        'hsl(var(--ring))',
+        background:  'hsl(var(--background))',
+        foreground:  'hsl(var(--foreground))',
+        primary: {
+          DEFAULT:    'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT:    'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT:    'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT:    'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT:    'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT:    'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT:    'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
       },
       fontSize: {
         'display-xl': ['3rem',      { lineHeight: '1',   fontWeight: '800', letterSpacing: '-0.01em' }],
@@ -94,6 +132,11 @@ const config: Config = {
         'card': '20px',
         'chip': '100px',
         'icon': '12px',
+        // shadcn radii
+        lg:     'var(--radius)',
+        md:     'calc(var(--radius) - 2px)',
+        sm:     'calc(var(--radius) - 4px)',
+        '4xl':  '2rem',
       },
       boxShadow: {
         'card':  '0 2px 12px rgba(31,28,15,0.06)',
@@ -104,13 +147,33 @@ const config: Config = {
           from: { transform: 'translateY(12px)', opacity: '0' },
           to:   { transform: 'translateY(0)',    opacity: '1' },
         },
+        'fade-in':   { from: { opacity: '0' }, to: { opacity: '1' } },
+        'fade-out':  { from: { opacity: '1' }, to: { opacity: '0' } },
+        'zoom-in':   { from: { opacity: '0', transform: 'scale(0.95)' }, to: { opacity: '1', transform: 'scale(1)' } },
+        'zoom-out':  { from: { opacity: '1', transform: 'scale(1)' }, to: { opacity: '0', transform: 'scale(0.95)' } },
       },
       animation: {
         'slide-up': 'slide-up 200ms ease-out',
+        'fade-in':  'fade-in 150ms ease-out',
+        'fade-out': 'fade-out 100ms ease-in',
+        'zoom-in':  'zoom-in 150ms ease-out',
+        'zoom-out': 'zoom-out 100ms ease-in',
       },
     },
   },
-  plugins: [forms],
+  plugins: [
+    forms,
+    // Custom variants for shadcn Radix data-state / data-* attributes
+    plugin(({ addVariant }) => {
+      addVariant('data-open',     ['&[data-state=open]',     '&[data-open]:not([data-open=false])'])
+      addVariant('data-closed',   ['&[data-state=closed]',   '&[data-closed]:not([data-closed=false])'])
+      addVariant('data-checked',  ['&[data-state=checked]',  '&[data-checked]:not([data-checked=false])'])
+      addVariant('data-unchecked',['&[data-state=unchecked]','&[data-unchecked]:not([data-unchecked=false])'])
+      addVariant('data-selected', ['&[data-selected=true]'])
+      addVariant('data-disabled', ['&[data-disabled=true]',  '&[data-disabled]:not([data-disabled=false])'])
+      addVariant('data-active',   ['&[data-state=active]',   '&[data-active]:not([data-active=false])'])
+    }),
+  ],
 }
 
 export default config

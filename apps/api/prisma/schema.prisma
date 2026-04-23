@@ -48,13 +48,17 @@ enum StatutCycle {
 // ── Modèles ───────────────────────────────────────────────
 
 model Entreprise {
-  id          String   @id @default(uuid())
-  nom         String
-  telephone   String   @unique
-  adresse     String?
-  plan        Plan     @default(ESSENTIEL)
-  actif       Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id            String   @id @default(uuid())
+  nom           String
+  raisonSociale String?
+  telephone     String   @unique
+  adresse       String?
+  ville         String?
+  ninea         String?
+  taille        String?
+  plan          Plan     @default(ESSENTIEL)
+  actif         Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   utilisateurs Utilisateur[]
   chantiers    Chantier[]

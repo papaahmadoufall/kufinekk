@@ -2,7 +2,18 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { XCircle, AlertTriangle, X } from 'lucide-react'
+import { XCircle, AlertTriangle } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface Props {
   chantierId: string
@@ -10,7 +21,7 @@ interface Props {
 
 export default function ChantierActions({ chantierId }: Props) {
   const router = useRouter()
-  const [showModal, setShowModal] = useState(false)
+  const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -25,7 +36,7 @@ export default function ChantierActions({ chantierId }: Props) {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json?.error?.message ?? 'Erreur serveur')
-      setShowModal(false)
+      setOpen(false)
       router.refresh()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur')
@@ -34,59 +45,62 @@ export default function ChantierActions({ chantierId }: Props) {
     }
   }
 
+  function handleOpenChange(next: boolean) {
+    if (!next) setError(null)
+    setOpen(next)
+  }
+
   return (
-    <>
-      <button
-        onClick={() => { setError(null); setShowModal(true) }}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-btn border-2 border-absent/40 text-absent-text text-sm font-semibold hover:bg-absent-light transition-colors"
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Button
+        variant="destructive"
+        size="lg"
+        onClick={() => setOpen(true)}
       >
-        <XCircle size={16} />
+        <XCircle />
         Fermer le chantier
-      </button>
+      </Button>
 
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white rounded-card shadow-2xl w-full max-w-md animate-slide-up">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-surface-soft">
-              <h3 className="font-bold text-ink text-base">Fermer le chantier</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1.5 rounded-btn hover:bg-surface-muted transition-colors"
-              >
-                <X size={18} className="text-ink-muted" />
-              </button>
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="flex items-start gap-3 p-3 bg-absent-light rounded-btn">
-                <AlertTriangle size={18} className="text-absent flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-ink">
-                  Fermer ce chantier passera son statut à <strong>TERMINÉ</strong>.
-                  Les agents ne pourront plus pointer. Cette action est réversible via l&apos;édition du chantier.
-                </p>
-              </div>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Fermer le chantier</DialogTitle>
+          <DialogDescription>
+            Cette action change le statut du chantier et bloque les pointages.
+          </DialogDescription>
+        </DialogHeader>
 
-              {error && <div role="alert" className="alert-error text-sm">{error}</div>}
+        <Alert variant="destructive" className="bg-absent-light/60">
+          <AlertTriangle />
+          <AlertDescription className="text-ink">
+            Fermer ce chantier passera son statut à <strong>TERMINÉ</strong>.
+            Les agents ne pourront plus pointer. Cette action est réversible
+            via l&apos;édition du chantier.
+          </AlertDescription>
+        </Alert>
 
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 btn-secondary"
-                >
-                  Annuler
-                </button>
-                <button
-                  onClick={handleFermer}
-                  disabled={loading}
-                  className="flex-1 h-11 px-5 bg-absent text-white text-sm font-semibold rounded-btn hover:bg-red-700 transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Fermeture…' : 'Confirmer la fermeture'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+        {error && (
+          <Alert variant="destructive">
+            <XCircle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="lg">
+              Annuler
+            </Button>
+          </DialogClose>
+          <Button
+            variant="destructive"
+            size="lg"
+            onClick={handleFermer}
+            disabled={loading}
+          >
+            {loading ? 'Fermeture…' : 'Confirmer la fermeture'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
