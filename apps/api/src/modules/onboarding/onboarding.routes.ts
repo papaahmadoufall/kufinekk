@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
-import { sendOtpPublicSchema, registerSchema } from './onboarding.schema'
-import { sendOtpPublic, register } from './onboarding.service'
+import { sendOtpPublicSchema, verifyOtpPublicSchema, registerSchema } from './onboarding.schema'
+import { sendOtpPublic, verifyOtpPublic, register } from './onboarding.service'
 import { AppError } from '../../shared/errors/AppError'
 
 export async function onboardingRoutes(app: FastifyInstance) {
@@ -15,6 +15,25 @@ export async function onboardingRoutes(app: FastifyInstance) {
     try {
       await sendOtpPublic(parsed.data)
       return reply.code(200).send({ data: { message: 'OTP envoyé' } })
+    } catch (err) {
+      if (err instanceof AppError) {
+        return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message } })
+      }
+      throw err
+    }
+  })
+
+  // ── POST /verify-otp : vérification non-destructive (UX étape OTP) ────────
+  app.post('/verify-otp', async (req, reply) => {
+    const parsed = verifyOtpPublicSchema.safeParse(req.body)
+    if (!parsed.success) {
+      return reply.code(422).send({
+        error: { code: 'validation_error', message: 'Données invalides', details: parsed.error.issues },
+      })
+    }
+    try {
+      await verifyOtpPublic(parsed.data)
+      return reply.code(200).send({ data: { valid: true } })
     } catch (err) {
       if (err instanceof AppError) {
         return reply.code(err.statusCode).send({ error: { code: err.code, message: err.message } })

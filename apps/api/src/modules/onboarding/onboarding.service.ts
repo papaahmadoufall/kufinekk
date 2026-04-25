@@ -4,7 +4,7 @@ import { sendSms } from '../../shared/services/axiomtext'
 import { genererMatricule } from '../../shared/services/matricule'
 import { AppError } from '../../shared/errors/AppError'
 import { ERROR_CODES } from '../../shared/errors/codes'
-import type { RegisterInput, SendOtpPublicInput } from './onboarding.schema'
+import type { RegisterInput, SendOtpPublicInput, VerifyOtpPublicInput } from './onboarding.schema'
 
 const OTP_EXPIRY_MINUTES = 10
 const BCRYPT_ROUNDS = 10
@@ -42,6 +42,27 @@ export async function sendOtpPublic(input: SendOtpPublicInput): Promise<void> {
     telephone,
     `[Kufinekk] Votre code de vérification : ${code}. Valable ${OTP_EXPIRY_MINUTES} min.`,
   )
+}
+
+/**
+ * Vérification non-destructive : valide l'OTP sans le marquer comme utilisé.
+ * Utilisée à l'étape OTP du wizard pour feedback immédiat.
+ * Le register final consommera le même OTP.
+ */
+export async function verifyOtpPublic(input: VerifyOtpPublicInput): Promise<void> {
+  const { telephone, code } = input
+  const otpSession = await prisma.otpSession.findFirst({
+    where: { telephone, utilise: false, expireLe: { gt: new Date() } },
+    orderBy: { createdAt: 'desc' },
+  })
+  if (!otpSession) {
+    throw new AppError(ERROR_CODES.OTP_EXPIRED, 'Code OTP expiré', 401)
+  }
+  const ok = await bcrypt.compare(code, otpSession.codeHash)
+  if (!ok) {
+    throw new AppError(ERROR_CODES.OTP_INVALID, 'Code OTP incorrect', 401)
+  }
+  // Pas d'update : on laisse l'OTP utilisable pour le register final
 }
 
 async function verifyOtpOrThrow(telephone: string, code: string): Promise<void> {

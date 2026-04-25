@@ -5,6 +5,27 @@ import { setToken } from '@/lib/auth'
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ?? 'https://kufinekk-production.up.railway.app'
 
+export async function verifyOtpAction(
+  telephone: string,
+  code: string,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const res = await fetch(`${API_URL}/api/v1/onboarding/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ telephone, code }),
+      cache: 'no-store',
+    })
+    if (!res.ok) {
+      const j = await res.json().catch(() => null)
+      return { ok: false, error: j?.error?.message ?? 'Code invalide' }
+    }
+    return { ok: true }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Erreur réseau' }
+  }
+}
+
 export async function sendOtpAction(telephone: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const res = await fetch(`${API_URL}/api/v1/onboarding/send-otp`, {

@@ -7,6 +7,12 @@ export const sendOtpPublicSchema = z.object({
 })
 export type SendOtpPublicInput = z.infer<typeof sendOtpPublicSchema>
 
+export const verifyOtpPublicSchema = z.object({
+  telephone: z.string().regex(phoneRegex, 'Numéro invalide'),
+  code: z.string().regex(/^\d{6}$/, 'Code OTP invalide'),
+})
+export type VerifyOtpPublicInput = z.infer<typeof verifyOtpPublicSchema>
+
 export const registerSchema = z.object({
   // Compte manager
   prenom: z.string().min(1),

@@ -20,7 +20,7 @@ import {
   FileText,
   Send,
 } from 'lucide-react'
-import { sendOtpAction, registerAction } from './actions'
+import { sendOtpAction, verifyOtpAction, registerAction } from './actions'
 
 // ── Types & steps ────────────────────────────────────────────────────────────
 type StepId = 'compte' | 'otp' | 'entreprise' | 'chantier' | 'pointeur' | 'agents' | 'pret'
@@ -297,7 +297,7 @@ export default function OnboardingWizard() {
     })
   }
 
-  // OTP → local advance (vérification réelle lors du register final)
+  // OTP → vérification immédiate côté serveur, puis avance
   const submitOtp = () => {
     const code = data.otp.join('')
     if (code.length !== 6) {
@@ -305,7 +305,14 @@ export default function OnboardingWizard() {
       return
     }
     setError(null)
-    next()
+    startTransition(async () => {
+      const res = await verifyOtpAction(phoneFull, code)
+      if (!res.ok) {
+        setError(res.error ?? 'Code invalide')
+        return
+      }
+      next()
+    })
   }
 
   // Étape finale avant écran "prêt" : register
@@ -383,6 +390,7 @@ export default function OnboardingWizard() {
 
       {/* Content */}
       <div className="flex-1 px-8 py-14 pb-20">
+       <div key={idx} className="animate-slide-up">
         {step.id === 'compte' && (
           <StepShell title={step.title} sub={step.sub}>
             <form
@@ -425,14 +433,17 @@ export default function OnboardingWizard() {
                 </span>
               </label>
               {error && <p className="text-sm text-absent-text font-sans">{error}</p>}
-              <KBtn type="submit" fullWidth disabled={isPending || !data.accept} iconRight={<ArrowRight className="w-4.5 h-4.5" />} className="mt-2">
-                {isPending ? 'Envoi…' : 'Recevoir le code SMS'}
-              </KBtn>
+              <div className="flex gap-2.5 mt-2">
+                <KBtn variant="ghost" onClick={back} iconLeft={<ArrowLeft className="w-4.5 h-4.5" />}>Retour</KBtn>
+                <KBtn type="submit" className="flex-1" disabled={isPending || !data.accept} iconRight={<ArrowRight className="w-4.5 h-4.5" />}>
+                  {isPending ? 'Envoi…' : 'Recevoir le code SMS'}
+                </KBtn>
+              </div>
             </form>
           </StepShell>
         )}
 
-        {step.id === 'otp' && <StepOtp data={data} set={set} next={submitOtp} back={back} error={error} />}
+        {step.id === 'otp' && <StepOtp data={data} set={set} next={submitOtp} back={back} error={error} isPending={isPending} />}
 
         {step.id === 'entreprise' && (
           <StepShell title={step.title} sub={step.sub}>
@@ -544,28 +555,29 @@ export default function OnboardingWizard() {
         {step.id === 'agents' && (
           <StepShell title={step.title} sub={step.sub}>
             <div className="flex flex-col gap-2.5">
-              <div className="grid grid-cols-[1.2fr_1.2fr_1.4fr_1fr_1fr_40px] gap-2 font-display font-bold text-[11px] tracking-[0.12em] uppercase text-ink-faint px-1">
+              <div className="grid grid-cols-[40px_1.2fr_1.2fr_1.2fr_1fr_40px] gap-2 font-display font-bold text-[11px] tracking-[0.12em] uppercase text-ink-faint px-1">
+                <span />
                 <span>Prénom</span>
                 <span>Nom</span>
-                <span>Téléphone</span>
                 <span>Poste</span>
                 <span>Taux / jour</span>
                 <span />
               </div>
               {data.agents.map((r, i) => (
-                <div key={i} className="grid grid-cols-[1.2fr_1.2fr_1.4fr_1fr_1fr_40px] gap-2 items-center">
-                  <KField><input className={inputClass} placeholder="Prénom" value={r.prenom} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], prenom: e.target.value }; set({ agents: n }) }} /></KField>
-                  <KField><input className={inputClass} placeholder="Nom" value={r.nom} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], nom: e.target.value }; set({ agents: n }) }} /></KField>
-                  <KField prefix="+221"><input className={inputClass} placeholder="77 000 00 00" value={r.telephone} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], telephone: e.target.value }; set({ agents: n }) }} /></KField>
-                  <KField><input className={inputClass} placeholder="Maçon" value={r.poste} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], poste: e.target.value }; set({ agents: n }) }} /></KField>
-                  <KField suffix="XOF"><input className={inputClass} placeholder="12 500" value={r.taux} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], taux: e.target.value }; set({ agents: n }) }} /></KField>
+                <div key={i} className="grid grid-cols-[40px_1.2fr_1.2fr_1.2fr_1fr_40px] gap-2 items-center">
                   <button
                     type="button"
                     onClick={() => set({ agents: data.agents.filter((_, j) => j !== i) })}
                     className="w-10 h-[52px] rounded-xl border-[1.5px] border-surface-soft bg-white text-ink-faint inline-flex items-center justify-center hover:text-absent"
+                    aria-label="Supprimer l'agent"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
+                  <KField><input className={inputClass} placeholder="Prénom" value={r.prenom} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], prenom: e.target.value }; set({ agents: n }) }} /></KField>
+                  <KField><input className={inputClass} placeholder="Nom" value={r.nom} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], nom: e.target.value }; set({ agents: n }) }} /></KField>
+                  <KField><input className={inputClass} placeholder="Maçon" value={r.poste} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], poste: e.target.value }; set({ agents: n }) }} /></KField>
+                  <KField suffix="XOF"><input className={inputClass} placeholder="12 500" value={r.taux} onChange={(e) => { const n = [...data.agents]; n[i] = { ...n[i], taux: e.target.value }; set({ agents: n }) }} /></KField>
+                  <span />
                 </div>
               ))}
               <button
@@ -594,6 +606,7 @@ export default function OnboardingWizard() {
         )}
 
         {step.id === 'pret' && <StepPret onFinish={finish} />}
+       </div>
       </div>
 
       <div className="border-t border-surface-soft px-8 py-4 font-sans text-xs text-ink-faint flex justify-between items-center flex-wrap gap-2">
@@ -613,12 +626,14 @@ function StepOtp({
   next,
   back,
   error,
+  isPending,
 }: {
   data: FormData
   set: (p: Partial<FormData>) => void
   next: () => void
   back: () => void
   error: string | null
+  isPending: boolean
 }) {
   const inputs = useRef<Array<HTMLInputElement | null>>([])
   const setCode = (i: number, v: string) => {
@@ -663,8 +678,8 @@ function StepOtp({
       {error && <p className="text-sm text-absent-text mt-3">{error}</p>}
       <div className="flex gap-2.5 mt-8">
         <KBtn variant="ghost" onClick={back} iconLeft={<ArrowLeft className="w-4.5 h-4.5" />}>Retour</KBtn>
-        <KBtn onClick={next} className="flex-1" iconRight={<ArrowRight className="w-4.5 h-4.5" />}>
-          Vérifier le code
+        <KBtn onClick={next} className="flex-1" disabled={isPending} iconRight={<ArrowRight className="w-4.5 h-4.5" />}>
+          {isPending ? 'Vérification…' : 'Vérifier le code'}
         </KBtn>
       </div>
     </StepShell>
