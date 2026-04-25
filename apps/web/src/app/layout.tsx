@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Manrope, Barlow_Condensed, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import { cn } from "@/lib/utils";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -34,8 +36,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="fr" className={`${manrope.variable} ${barlowCondensed.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}>
-      <body>{children}</body>
+    <html lang="fr" className={cn(manrope.variable, barlowCondensed.variable, spaceGrotesk.variable, jetbrainsMono.variable, "font-sans")}>
+      <body>
+        <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
+      </body>
     </html>
   )
 }

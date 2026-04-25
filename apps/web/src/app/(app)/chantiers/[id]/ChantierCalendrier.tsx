@@ -2,8 +2,36 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, ChevronRight, Check, X, Clock, Download } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, X, Clock, Download, XCircle } from 'lucide-react'
 import { formatXof } from '@/lib/copy'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/components/ui/tooltip'
 
 const DAY_LABELS = ['Ven', 'Sam', 'Dim', 'Lun', 'Mar', 'Mer', 'Jeu']
 
@@ -62,12 +90,17 @@ function formatSemaineLabel(debut: string, fin: string): string {
   return `${debutStr} – ${finStr}`
 }
 
-function toLocalTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
+}
+
+function getSemaineActuelle(): string {
+  const now = new Date()
+  const dow = now.getDay()
+  const diff = (dow + 2) % 7
+  const fri = new Date(now)
+  fri.setDate(now.getDate() - diff)
+  return fri.toISOString().slice(0, 10)
 }
 
 async function callProxy(path: string, method = 'POST', body?: object) {
@@ -98,85 +131,104 @@ function CellPresence({
   isFuture: boolean
   onCorrect: (day: string, agent: AgentPresence, cell: PresenceCell | null) => void
 }) {
+  const cellWrap = (content: React.ReactNode, tip?: string) => (
+    <TableCell className="px-1 py-1.5 text-center">
+      {tip ? (
+        <Tooltip>
+          <TooltipTrigger asChild>{content as React.ReactElement}</TooltipTrigger>
+          <TooltipContent>{tip}</TooltipContent>
+        </Tooltip>
+      ) : (
+        content
+      )}
+    </TableCell>
+  )
+
   if (!cell) {
-    // Vide : jour passé ou futur sans pointage
     if (isFuture) {
-      return (
-        <td className="px-1 py-1.5 text-center">
-          <div className="w-9 h-9 mx-auto rounded-lg bg-surface-muted flex items-center justify-center">
-            <span className="text-xs text-ink-faint">—</span>
-          </div>
-        </td>
+      return cellWrap(
+        <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-surface-muted">
+          <span className="text-xs text-ink-faint">—</span>
+        </div>
       )
     }
-    return (
-      <td className="px-1 py-1.5 text-center">
-        <button
-          onClick={() => isManager && onCorrect(day, agent, null)}
-          disabled={!isManager}
-          className="w-9 h-9 mx-auto rounded-lg border-2 border-dashed border-surface-soft flex items-center justify-center hover:border-ink-faint transition-colors disabled:cursor-default"
-          title={isManager ? 'Marquer absent' : undefined}
-        >
-          <span className="text-xs text-ink-faint">⬜</span>
-        </button>
-      </td>
+    return cellWrap(
+      <button
+        onClick={() => isManager && onCorrect(day, agent, null)}
+        disabled={!isManager}
+        className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg border-2 border-dashed border-surface-soft transition-colors hover:border-ink-faint disabled:cursor-default"
+      >
+        <span className="text-xs text-ink-faint">⬜</span>
+      </button>,
+      isManager ? 'Marquer absent' : 'Aucun pointage'
     )
   }
 
   if (cell.statut === 'ABSENT') {
-    return (
-      <td className="px-1 py-1.5 text-center">
-        <div className="w-9 h-9 mx-auto rounded-lg bg-absent-light flex items-center justify-center">
-          <X size={14} className="text-absent-text" />
-        </div>
-      </td>
+    return cellWrap(
+      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-absent-light">
+        <X size={14} className="text-absent-text" />
+      </div>,
+      'Absent'
     )
   }
 
   if (cell.statut === 'EN_COURS') {
-    return (
-      <td className="px-1 py-1.5 text-center">
-        <div className="w-9 h-9 mx-auto rounded-lg bg-encours-light flex items-center justify-center">
-          <Clock size={13} className="text-encours-text" />
-        </div>
-      </td>
+    return cellWrap(
+      <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-encours-light">
+        <Clock size={13} className="text-encours-text" />
+      </div>,
+      `En cours · entrée ${cell.heureEntree ? new Date(cell.heureEntree).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '—'}`
     )
   }
 
   // VALIDE ou CORRIGE
-  return (
-    <td className="px-1 py-1.5 text-center">
-      <button
-        onClick={() => isManager && onCorrect(day, agent, cell)}
-        disabled={!isManager}
-        className="w-9 h-9 mx-auto rounded-lg bg-entree-light flex items-center justify-center hover:bg-entree-subtle transition-colors disabled:cursor-default group"
-        title={isManager ? 'Corriger les heures' : undefined}
-      >
-        <Check size={14} className="text-entree-text" />
-      </button>
-    </td>
+  const tip = cell.heureEntree && cell.heureSortie
+    ? `${new Date(cell.heureEntree).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} → ${new Date(cell.heureSortie).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}${cell.heuresSupp > 0 ? ` (+${cell.heuresSupp}h supp)` : ''}`
+    : 'Présent'
+  return cellWrap(
+    <button
+      onClick={() => isManager && onCorrect(day, agent, cell)}
+      disabled={!isManager}
+      className="mx-auto flex h-9 w-9 items-center justify-center rounded-lg bg-entree-light transition-colors hover:bg-entree-subtle disabled:cursor-default"
+    >
+      <Check size={14} className="text-entree-text" />
+    </button>,
+    tip
   )
 }
 
-// ── Popover de correction ─────────────────────────────
+// ── Popover de correction (Dialog shadcn) ─────────────
 
-function CorrectionPopover({
+function CorrectionDialog({
   day,
   agent,
   cell,
-  onClose,
+  open,
+  onOpenChange,
   onDone,
 }: {
   day: string
   agent: AgentPresence
   cell: PresenceCell | null
-  onClose: () => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
   onDone: () => void
 }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Pour marquer absent (cellule vide)
+  const defaultEntree = cell?.heureEntree
+    ? new Date(cell.heureEntree).toISOString().slice(11, 16)
+    : '08:00'
+  const defaultSortie = cell?.heureSortie
+    ? new Date(cell.heureSortie).toISOString().slice(11, 16)
+    : '17:00'
+
+  const [heureEntree, setHeureEntree] = useState(defaultEntree)
+  const [heureSortie, setHeureSortie] = useState(defaultSortie)
+  const [note, setNote] = useState('')
+
   async function handleAbsence() {
     setLoading(true)
     setError(null)
@@ -192,18 +244,6 @@ function CorrectionPopover({
       setLoading(false)
     }
   }
-
-  // Pour corriger heures (cellule VALIDE/CORRIGE)
-  const defaultEntree = cell?.heureEntree
-    ? new Date(cell.heureEntree).toISOString().slice(11, 16)
-    : '08:00'
-  const defaultSortie = cell?.heureSortie
-    ? new Date(cell.heureSortie).toISOString().slice(11, 16)
-    : '17:00'
-
-  const [heureEntree, setHeureEntree] = useState(defaultEntree)
-  const [heureSortie, setHeureSortie] = useState(defaultSortie)
-  const [note, setNote] = useState('')
 
   async function handleCorrection() {
     setLoading(true)
@@ -228,88 +268,98 @@ function CorrectionPopover({
   })
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-card shadow-2xl w-full max-w-sm animate-slide-up">
-        <div className="px-5 py-4 border-b border-surface-soft">
-          <p className="font-bold text-ink text-sm">{agent.nom}</p>
-          <p className="text-xs text-ink-faint mt-0.5 capitalize">{dayLabel}</p>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{agent.nom}</DialogTitle>
+          <DialogDescription className="capitalize">{dayLabel}</DialogDescription>
+        </DialogHeader>
 
-        <div className="p-5 space-y-4">
-          {error && <div role="alert" className="alert-error text-sm">{error}</div>}
+        {error && (
+          <Alert variant="destructive">
+            <XCircle />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-          {/* Cas 1 : cellule vide → marquer absent */}
-          {!cell && (
-            <button
-              onClick={handleAbsence}
-              disabled={loading}
-              className="w-full flex items-center gap-3 p-3 rounded-btn border-2 border-absent/40 bg-absent-light text-absent-text hover:bg-absent/20 transition-colors disabled:opacity-50"
-            >
-              <X size={18} className="flex-shrink-0" />
-              <div className="text-left">
-                <p className="text-sm font-bold">{loading ? 'Enregistrement…' : 'Marquer Absent'}</p>
-                <p className="text-xs font-normal opacity-75">Enregistre une absence manuelle</p>
-              </div>
-            </button>
-          )}
+        {/* Cas 1 : cellule vide → marquer absent */}
+        {!cell && (
+          <Button
+            variant="destructive"
+            size="lg"
+            onClick={handleAbsence}
+            disabled={loading}
+            className="w-full justify-start gap-3"
+          >
+            <X />
+            <span className="text-left">
+              <span className="block font-bold">{loading ? 'Enregistrement…' : 'Marquer Absent'}</span>
+              <span className="block text-xs font-normal opacity-80">Enregistre une absence manuelle</span>
+            </span>
+          </Button>
+        )}
 
-          {/* Cas 2 : cellule VALIDE/CORRIGE → corriger les heures */}
-          {cell && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">Heure entrée</label>
-                  <input
-                    type="time"
-                    value={heureEntree}
-                    onChange={(e) => setHeureEntree(e.target.value)}
-                    className="input-field text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">Heure sortie</label>
-                  <input
-                    type="time"
-                    value={heureSortie}
-                    onChange={(e) => setHeureSortie(e.target.value)}
-                    className="input-field text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-ink mb-1">
-                  Note <span className="text-ink-faint font-normal">(optionnel)</span>
-                </label>
-                <input
-                  type="text"
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="Motif de correction…"
-                  className="input-field text-sm"
+        {/* Cas 2 : cellule VALIDE/CORRIGE → corriger les heures */}
+        {cell && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="entree" className="text-xs font-semibold text-ink">
+                  Heure entrée
+                </Label>
+                <Input
+                  id="entree"
+                  type="time"
+                  value={heureEntree}
+                  onChange={(e) => setHeureEntree(e.target.value)}
+                  className="h-10"
                 />
               </div>
-
-              <div className="flex gap-2">
-                <button onClick={onClose} className="flex-1 btn-secondary text-sm">Annuler</button>
-                <button
-                  onClick={handleCorrection}
-                  disabled={loading}
-                  className="flex-1 btn-primary text-sm"
-                >
-                  {loading ? 'Correction…' : 'Corriger'}
-                </button>
+              <div className="space-y-1">
+                <Label htmlFor="sortie" className="text-xs font-semibold text-ink">
+                  Heure sortie
+                </Label>
+                <Input
+                  id="sortie"
+                  type="time"
+                  value={heureSortie}
+                  onChange={(e) => setHeureSortie(e.target.value)}
+                  className="h-10"
+                />
               </div>
-            </>
-          )}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="note" className="text-xs font-semibold text-ink">
+                Note <span className="font-normal text-ink-faint">(optionnel)</span>
+              </Label>
+              <Input
+                id="note"
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Motif de correction…"
+                className="h-10"
+              />
+            </div>
+          </div>
+        )}
 
-          {/* Bouton fermer pour le cas absence */}
-          {!cell && (
-            <button onClick={onClose} className="w-full btn-secondary text-sm">Annuler</button>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="outline" size="lg">Annuler</Button>
+          </DialogClose>
+          {cell && (
+            <Button
+              size="lg"
+              onClick={handleCorrection}
+              disabled={loading}
+            >
+              {loading ? 'Correction…' : 'Corriger'}
+            </Button>
           )}
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -340,15 +390,6 @@ export default function ChantierCalendrier({
   // Pas de semaine future
   const canGoNext = semaine < getSemaineActuelle()
 
-  function getSemaineActuelle(): string {
-    const now = new Date()
-    const dow = now.getDay()
-    const diff = (dow + 2) % 7
-    const fri = new Date(now)
-    fri.setDate(now.getDate() - diff)
-    return fri.toISOString().slice(0, 10)
-  }
-
   function navigate(targetSemaine: string) {
     router.push(`/chantiers/${chantierId}?semaine=${targetSemaine}`)
   }
@@ -363,160 +404,187 @@ export default function ChantierCalendrier({
   }
 
   return (
-    <div className="card overflow-hidden">
+    <Card className="bg-surface-card p-0">
       {/* Navigation semaine */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-surface-soft bg-surface-muted">
-        <button
-          onClick={() => navigate(shiftSemaine(semaine, -1))}
-          disabled={!canGoPrev}
-          className="p-1.5 rounded-btn hover:bg-surface-soft transition-colors disabled:opacity-30"
-        >
-          <ChevronLeft size={18} className="text-ink-muted" />
-        </button>
+      <div className="flex items-center justify-between border-b border-surface-soft bg-surface-muted px-4 py-3">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => navigate(shiftSemaine(semaine, -1))}
+              disabled={!canGoPrev}
+              aria-label="Semaine précédente"
+            >
+              <ChevronLeft />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Semaine précédente</TooltipContent>
+        </Tooltip>
 
         <p className="text-sm font-bold text-ink">
           {formatSemaineLabel(semaineDebut, semaineFin)}
         </p>
 
-        <button
-          onClick={() => navigate(shiftSemaine(semaine, 1))}
-          disabled={!canGoNext}
-          className="p-1.5 rounded-btn hover:bg-surface-soft transition-colors disabled:opacity-30"
-        >
-          <ChevronRight size={18} className="text-ink-muted" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => navigate(shiftSemaine(semaine, 1))}
+              disabled={!canGoNext}
+              aria-label="Semaine suivante"
+            >
+              <ChevronRight />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Semaine suivante</TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Tableau */}
-      <div className="overflow-x-auto">
-        {agents.length === 0 ? (
-          <div className="px-5 py-10 text-center">
-            <p className="font-semibold text-ink">Aucun agent actif cette semaine</p>
-            <p className="text-sm text-ink-faint mt-1">Rattachez des agents à ce chantier pour voir les présences.</p>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-surface-soft">
-                <th className="text-left px-4 py-2.5 text-label text-ink-faint uppercase font-bold min-w-[160px]">
-                  Agent
-                </th>
-                {weekDays.map((day, i) => (
-                  <th
-                    key={day}
-                    className={`text-center px-1 py-2.5 text-label uppercase font-bold w-12 ${
-                      day === today ? 'text-brand-600' : 'text-ink-faint'
-                    }`}
-                  >
-                    {DAY_LABELS[i]}
-                    <br />
-                    <span className="font-normal normal-case text-[10px]">
-                      {new Date(day + 'T00:00:00Z').getUTCDate()}
-                    </span>
-                  </th>
-                ))}
-                <th className="text-center px-2 py-2.5 text-label text-ink-faint uppercase font-bold w-14">
-                  Jours
-                </th>
-                <th className="text-center px-2 py-2.5 text-label text-ink-faint uppercase font-bold w-14">
-                  H.Supp
-                </th>
-                <th className="text-right px-4 py-2.5 text-label text-ink-faint uppercase font-bold min-w-[100px]">
-                  Semaine
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {agents.map((agent, idx) => (
-                <tr
-                  key={agent.agentId}
-                  className={idx % 2 === 0 ? 'bg-white' : 'bg-surface-app/40'}
+      {agents.length === 0 ? (
+        <div className="px-5 py-10 text-center">
+          <p className="font-semibold text-ink">Aucun agent actif cette semaine</p>
+          <p className="mt-1 text-sm text-ink-faint">
+            Rattachez des agents à ce chantier pour voir les présences.
+          </p>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow className="border-surface-soft hover:bg-transparent">
+              <TableHead className="min-w-[160px] text-label uppercase text-ink-faint">
+                Agent
+              </TableHead>
+              {weekDays.map((day, i) => (
+                <TableHead
+                  key={day}
+                  className={`w-12 px-1 text-center text-label uppercase ${
+                    day === today ? 'text-brand-600' : 'text-ink-faint'
+                  }`}
                 >
-                  {/* Nom agent */}
-                  <td className="px-4 py-2.5">
-                    <p className="font-semibold text-ink text-sm truncate max-w-[150px]">{agent.nom}</p>
-                    <p className="text-[11px] text-ink-faint font-mono">{agent.matricule}</p>
-                  </td>
-
-                  {/* Cellules jour */}
-                  {weekDays.map((day) => (
-                    <CellPresence
-                      key={day}
-                      day={day}
-                      cell={agent.presences[day]}
-                      agent={agent}
-                      isManager={isManager}
-                      isFuture={day > today}
-                      onCorrect={handleCellClick}
-                    />
-                  ))}
-
-                  {/* Totaux */}
-                  <td className="px-2 py-2.5 text-center">
-                    <span className="text-sm font-bold text-ink font-stat">{agent.totalJours}</span>
-                    <span className="text-xs text-ink-faint">j</span>
-                  </td>
-                  <td className="px-2 py-2.5 text-center">
-                    <span className="text-sm font-bold text-ink font-stat">{agent.totalHeuresSupp}</span>
-                    <span className="text-xs text-ink-faint">h</span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right">
-                    <span className="text-sm font-bold text-ink font-stat">
-                      {formatXof(agent.totalSemaineXof)}
-                    </span>
-                  </td>
-                </tr>
+                  {DAY_LABELS[i]}
+                  <br />
+                  <span className="text-[10px] font-normal normal-case">
+                    {new Date(day + 'T00:00:00Z').getUTCDate()}
+                  </span>
+                </TableHead>
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+              <TableHead className="w-14 text-center text-label uppercase text-ink-faint">
+                Jours
+              </TableHead>
+              <TableHead className="w-14 text-center text-label uppercase text-ink-faint">
+                H.Supp
+              </TableHead>
+              <TableHead className="min-w-[100px] text-right text-label uppercase text-ink-faint">
+                Semaine
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {agents.map((agent, idx) => (
+              <TableRow
+                key={agent.agentId}
+                className={`border-surface-soft ${idx % 2 === 0 ? 'bg-white' : 'bg-surface-app/40'} hover:bg-surface-muted/30`}
+              >
+                <TableCell className="py-2.5">
+                  <p className="max-w-[150px] truncate text-sm font-semibold text-ink">{agent.nom}</p>
+                  <p className="font-mono text-[11px] text-ink-faint">{agent.matricule}</p>
+                </TableCell>
+
+                {weekDays.map((day) => (
+                  <CellPresence
+                    key={day}
+                    day={day}
+                    cell={agent.presences[day]}
+                    agent={agent}
+                    isManager={isManager}
+                    isFuture={day > today}
+                    onCorrect={handleCellClick}
+                  />
+                ))}
+
+                <TableCell className="px-2 py-2.5 text-center">
+                  <span className="font-stat text-sm font-bold text-ink">{agent.totalJours}</span>
+                  <span className="text-xs text-ink-faint">j</span>
+                </TableCell>
+                <TableCell className="px-2 py-2.5 text-center">
+                  <span className="font-stat text-sm font-bold text-ink">{agent.totalHeuresSupp}</span>
+                  <span className="text-xs text-ink-faint">h</span>
+                </TableCell>
+                <TableCell className="py-2.5 text-right">
+                  <span className="font-stat text-sm font-bold text-ink">
+                    {formatXof(agent.totalSemaineXof)}
+                  </span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-4 py-3 border-t border-surface-soft bg-surface-muted">
+      <div className="flex items-center justify-between border-t border-surface-soft bg-surface-muted px-4 py-3">
         {/* Légende */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-entree-light flex items-center justify-center">
-              <Check size={10} className="text-entree-text" />
-            </div>
-            <span className="text-xs text-ink-faint">Présent</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-absent-light flex items-center justify-center">
-              <X size={10} className="text-absent-text" />
-            </div>
-            <span className="text-xs text-ink-faint">Absent</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-encours-light flex items-center justify-center">
-              <Clock size={10} className="text-encours-text" />
-            </div>
-            <span className="text-xs text-ink-faint">En cours</span>
-          </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Legend
+            color="bg-entree-light"
+            icon={<Check size={10} className="text-entree-text" />}
+            label="Présent"
+          />
+          <Separator orientation="vertical" className="h-4 bg-surface-soft" />
+          <Legend
+            color="bg-absent-light"
+            icon={<X size={10} className="text-absent-text" />}
+            label="Absent"
+          />
+          <Separator orientation="vertical" className="h-4 bg-surface-soft" />
+          <Legend
+            color="bg-encours-light"
+            icon={<Clock size={10} className="text-encours-text" />}
+            label="En cours"
+          />
         </div>
 
-        {/* Export PDF — désactivé pour l'instant */}
-        <button
-          disabled
-          className="flex items-center gap-1.5 text-xs text-ink-faint opacity-50 cursor-not-allowed"
-          title="Export PDF — disponible prochainement"
-        >
-          <Download size={13} />
-          Exporter PDF
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled
+              className="gap-1.5 text-xs text-ink-faint opacity-50"
+            >
+              <Download size={13} />
+              Exporter PDF
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Disponible prochainement</TooltipContent>
+        </Tooltip>
       </div>
 
-      {/* Popover correction */}
+      {/* Dialog correction */}
       {popover && (
-        <CorrectionPopover
+        <CorrectionDialog
           day={popover.day}
           agent={popover.agent}
           cell={popover.cell}
-          onClose={() => setPopover(null)}
+          open={!!popover}
+          onOpenChange={(o) => !o && setPopover(null)}
           onDone={handlePopoverDone}
         />
       )}
+    </Card>
+  )
+}
+
+function Legend({ color, icon, label }: { color: string; icon: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className={`flex h-4 w-4 items-center justify-center rounded ${color}`}>
+        {icon}
+      </div>
+      <span className="text-xs text-ink-faint">{label}</span>
     </div>
   )
 }

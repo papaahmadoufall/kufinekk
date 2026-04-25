@@ -1,3 +1,5 @@
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,6 +7,7 @@
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    @apply font-sans;
   }
 
   body {
@@ -25,6 +28,34 @@
   h1, h2, h3 {
     font-family: var(--font-display), 'Barlow Condensed', Impact, sans-serif;
   }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
+  }
+  :root {
+    /* ── Shadcn tokens mappés sur la palette Kufinekk (HSL) ──────────── */
+    --background:             38 100% 96%;   /* #fff9ed - cream */
+    --foreground:             42 35%  9%;    /* #1f1c0f - ink */
+    --card:                   0   0%  100%;  /* white */
+    --card-foreground:        42 35%  9%;    /* ink */
+    --popover:                0   0%  100%;  /* white */
+    --popover-foreground:     42 35%  9%;    /* ink */
+    --primary:                20 100% 32%;   /* #a43700 - brand-600 */
+    --primary-foreground:     0   0%  100%;  /* white */
+    --secondary:              43 60%  91%;   /* #f5edd9 - surface-muted */
+    --secondary-foreground:   42 35%  9%;    /* ink */
+    --muted:                  43 60%  91%;   /* surface-muted */
+    --muted-foreground:       13 24%  29%;   /* #5a4138 - ink-muted */
+    --accent:                 43 60%  91%;   /* surface-muted */
+    --accent-foreground:      42 35%  9%;    /* ink */
+    --destructive:            0  75%  42%;   /* #ba1a1a - absent */
+    --destructive-foreground: 0   0%  100%;  /* white */
+    --border:                 43 43%  86%;   /* #eae2ce - surface-soft */
+    --input:                  43 43%  86%;   /* surface-soft */
+    --ring:                   20 100% 32%;   /* brand-600 */
+    --radius:                 0.875rem;      /* 14px — matches rounded-btn */
+  }
+  /* Dark mode disabled in V1 — Kufinekk palette is light-only */
 }
 
 @layer utilities {

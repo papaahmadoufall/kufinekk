@@ -1,9 +1,19 @@
 import { getToken, getUser } from '@/lib/auth'
 import { apiFetch } from '@/lib/api'
 import { formatXof } from '@/lib/copy'
-import Badge from '@/components/Badge'
+import KufinekkBadge from '@/components/Badge'
 import Link from 'next/link'
 import { ArrowLeft, MapPin, Clock, Users, CheckCircle, XCircle, Banknote } from 'lucide-react'
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardDescription,
+  CardAction,
+} from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Separator } from '@/components/ui/separator'
 import ChantierCalendrier from './ChantierCalendrier'
 import ChantierActions from './ChantierActions'
 
@@ -61,6 +71,35 @@ function getSemaineActuelle(): string {
   return friday.toISOString().slice(0, 10)
 }
 
+function StatCard({
+  icon,
+  iconClassName,
+  label,
+  value,
+  hint,
+  valueClassName = 'font-stat text-stat-md font-bold',
+}: {
+  icon: React.ReactNode
+  iconClassName: string
+  label: string
+  value: React.ReactNode
+  hint: string
+  valueClassName?: string
+}) {
+  return (
+    <Card size="sm" className="bg-surface-card">
+      <CardContent>
+        <div className="mb-1 flex items-center gap-2">
+          <span className={iconClassName}>{icon}</span>
+          <p className="text-label uppercase text-ink-faint">{label}</p>
+        </div>
+        <p className={`text-ink ${valueClassName}`}>{value}</p>
+        <p className="mt-0.5 text-xs text-ink-faint">{hint}</p>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default async function ChantierDetailPage({
   params,
   searchParams,
@@ -97,13 +136,12 @@ export default async function ChantierDetailPage({
   ) ?? []
 
   return (
-    <div className="p-4 lg:p-8 max-w-6xl">
-
+    <div className="max-w-6xl p-4 lg:p-8">
       {/* Back */}
       <div className="mb-5">
         <Link
           href="/chantiers"
-          className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-ink"
+          className="inline-flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
         >
           <ArrowLeft size={16} />
           Retour aux chantiers
@@ -111,36 +149,44 @@ export default async function ChantierDetailPage({
       </div>
 
       {error && (
-        <div role="alert" className="alert-error mb-5">{error}</div>
+        <Alert variant="destructive" className="mb-5">
+          <XCircle />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {chantier && (
         <>
           {/* ── Header chantier ─────────────────────────── */}
-          <div className="card p-5 mb-4">
-            <div className="flex items-start justify-between mb-3">
-              <h1 className="text-xl font-bold text-ink pr-2">{chantier.nom}</h1>
-              <Badge statut={chantier.statut} size="md" />
-            </div>
+          <Card className="mb-4 bg-surface-card">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-ink">
+                {chantier.nom}
+              </CardTitle>
+              {chantier.adresse && (
+                <CardDescription className="flex items-center gap-1.5 text-ink-muted">
+                  <MapPin size={14} className="flex-shrink-0 text-ink-faint" />
+                  {chantier.adresse}
+                </CardDescription>
+              )}
+              <CardAction>
+                <KufinekkBadge statut={chantier.statut} size="md" />
+              </CardAction>
+            </CardHeader>
 
-            {chantier.adresse && (
-              <p className="flex items-center gap-1.5 text-sm text-ink-muted mb-4">
-                <MapPin size={14} className="flex-shrink-0 text-ink-faint" />
-                {chantier.adresse}
-              </p>
-            )}
+            <Separator className="bg-surface-soft" />
 
-            <div className="border-t border-surface-soft pt-4 grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 gap-4 lg:grid-cols-4">
               <div>
-                <p className="text-label text-ink-faint uppercase">Début</p>
-                <p className="text-sm text-ink font-medium">
+                <p className="text-label uppercase text-ink-faint">Début</p>
+                <p className="text-sm font-medium text-ink">
                   {new Date(chantier.dateDebut).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </p>
               </div>
               {chantier.dateFinPrevue && (
                 <div>
-                  <p className="text-label text-ink-faint uppercase">Fin prévue</p>
-                  <p className="text-sm text-ink font-medium">
+                  <p className="text-label uppercase text-ink-faint">Fin prévue</p>
+                  <p className="text-sm font-medium text-ink">
                     {new Date(chantier.dateFinPrevue).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </p>
                 </div>
@@ -148,47 +194,45 @@ export default async function ChantierDetailPage({
               <div>
                 <div className="flex items-center gap-1.5">
                   <Clock size={13} className="text-ink-faint" />
-                  <p className="text-label text-ink-faint uppercase">Heure début</p>
+                  <p className="text-label uppercase text-ink-faint">Heure début</p>
                 </div>
-                <p className="text-sm text-ink font-medium">{chantier.heureDebutStd}</p>
+                <p className="text-sm font-medium text-ink">{chantier.heureDebutStd}</p>
               </div>
               <div>
                 <div className="flex items-center gap-1.5">
                   <Users size={13} className="text-ink-faint" />
-                  <p className="text-label text-ink-faint uppercase">Agents actifs</p>
+                  <p className="text-label uppercase text-ink-faint">Agents actifs</p>
                 </div>
-                <p className="text-sm text-ink font-medium">{contratsActifs.length}</p>
+                <p className="text-sm font-medium text-ink">{contratsActifs.length}</p>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* ── Stats rapides ────────────────────────────── */}
           {stats && (
-            <div className="grid grid-cols-3 gap-3 mb-5">
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <CheckCircle size={16} className="text-entree" />
-                  <p className="text-label text-ink-faint uppercase">Présents</p>
-                </div>
-                <p className="text-stat-md font-bold text-ink font-stat">{stats.presentsAujourdhui}</p>
-                <p className="text-xs text-ink-faint mt-0.5">aujourd&apos;hui</p>
-              </div>
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <XCircle size={16} className="text-absent" />
-                  <p className="text-label text-ink-faint uppercase">Absents</p>
-                </div>
-                <p className="text-stat-md font-bold text-ink font-stat">{stats.absentsAujourdhui}</p>
-                <p className="text-xs text-ink-faint mt-0.5">aujourd&apos;hui</p>
-              </div>
-              <div className="card p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Banknote size={16} className="text-encours" />
-                  <p className="text-label text-ink-faint uppercase">Masse sal.</p>
-                </div>
-                <p className="text-sm font-bold text-ink font-stat">{formatXof(stats.masseSalarialeXof)}</p>
-                <p className="text-xs text-ink-faint mt-0.5">cette semaine</p>
-              </div>
+            <div className="mb-5 grid grid-cols-3 gap-3">
+              <StatCard
+                icon={<CheckCircle size={16} />}
+                iconClassName="text-entree"
+                label="Présents"
+                value={stats.presentsAujourdhui}
+                hint="aujourd'hui"
+              />
+              <StatCard
+                icon={<XCircle size={16} />}
+                iconClassName="text-absent"
+                label="Absents"
+                value={stats.absentsAujourdhui}
+                hint="aujourd'hui"
+              />
+              <StatCard
+                icon={<Banknote size={16} />}
+                iconClassName="text-encours"
+                label="Masse sal."
+                value={formatXof(stats.masseSalarialeXof)}
+                hint="cette semaine"
+                valueClassName="font-stat text-sm font-bold"
+              />
             </div>
           )}
 

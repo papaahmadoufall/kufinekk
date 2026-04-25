@@ -15,6 +15,7 @@ import { chantiersRoutes } from './modules/chantiers/chantiers.routes'
 import { pointagesRoutes } from './modules/pointages/pointages.routes'
 import { cyclesPaieRoutes } from './modules/cycles-paie/cycles-paie.routes'
 import { dashboardRoutes } from './modules/dashboard/dashboard.routes'
+import { onboardingRoutes } from './modules/onboarding/onboarding.routes'
 
 export async function buildApp() {
   const app = Fastify({
@@ -79,6 +80,16 @@ export async function buildApp() {
   await app.register(pointagesRoutes, { prefix: '/api/v1/pointages' })
   await app.register(cyclesPaieRoutes, { prefix: '/api/v1/cycles-paie' })
   await app.register(dashboardRoutes, { prefix: '/api/v1/dashboard' })
+
+  // Onboarding : rate-limit modéré (10 req/min par IP pour send-otp & register)
+  await app.register(async (onbApp) => {
+    await onbApp.register(rateLimitPlugin, {
+      max: 10,
+      timeWindow: '1 minute',
+      keyGenerator: (req) => req.ip,
+    })
+    await onbApp.register(onboardingRoutes)
+  }, { prefix: '/api/v1/onboarding' })
 
   return app
 }
