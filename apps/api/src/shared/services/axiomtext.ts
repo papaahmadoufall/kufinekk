@@ -9,17 +9,21 @@ export async function sendSms(to: string, message: string): Promise<void> {
   const token = process.env.AXIOMTEXT_TOKEN
   if (!token) throw new Error('AXIOMTEXT_TOKEN manquant')
 
+  const signature = process.env.AXIOMTEXT_SIGNATURE
+  const body: Record<string, string> = { to, message }
+  // Ne pas envoyer de signature personnalisée si non configurée
+  // (AxiomText utilisera la signature par défaut du compte)
+  if (signature && signature.length > 0) {
+    body.signature = signature
+  }
+
   const res = await fetch(AXIOMTEXT_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      to,
-      message,
-      signature: process.env.AXIOMTEXT_SIGNATURE ?? 'Kufinekk',
-    }),
+    body: JSON.stringify(body),
   })
 
   if (!res.ok) {
