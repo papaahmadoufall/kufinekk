@@ -469,7 +469,7 @@ export default function OnboardingWizard() {
                         key={s}
                         type="button"
                         onClick={() => set({ taille: s })}
-                        className={`h-11 px-4.5 rounded-chip border-[1.5px] font-sans font-semibold text-[13px] transition ${
+                        className={`h-[52px] min-w-[120px] px-5 rounded-full border-[1.5px] font-sans font-semibold text-[14px] leading-none transition inline-flex items-center justify-center ${
                           active ? 'bg-brand-100 text-brand-700 border-brand-600' : 'bg-white text-ink border-surface-soft hover:border-brand-600/50'
                         }`}
                       >
