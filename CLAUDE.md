@@ -567,6 +567,7 @@ API_BASE_URL="https://api.kufinekk.com"
 | S5     | 1.5 sem | Pointages + calcul A+C + corrections           |
 | S6     | 1.5 sem | CyclePaie + Wave Payout + polling              |
 | S7     | 1.5 sem | Dashboard + sécurité + OpenAPI spec            |
+| S8     | 1 sem   | Landing publique + Onboarding self-serve 7 étapes |
 
 **Total estimé : 10 semaines pour un backend V1 production-ready.**
 
@@ -643,52 +644,64 @@ Les fichiers de référence vivants du projet sont dans `docs/` :
 
 ---
 
-## État d'avancement — Mis à jour le 2026-04-11
+## État d'avancement — Mis à jour le 2026-04-26
 
-### Backend V1 : COMPLET en production
-
-Tous les sprints S0→S7 sont terminés et déployés.
+### Backend V1 : COMPLET + Onboarding self-serve
 
 | Sprint | Livrable | Statut |
 |--------|----------|--------|
-| S0 | Monorepo + Prisma + CI/CD | ✅ |
-| S1 | Auth OTP + JWT + sessions | ✅ |
-| S2 | Entreprises + Utilisateurs + RBAC | ✅ |
-| S3 | Agents + Contrats + Transfert atomique | ✅ |
-| S4 | Chantiers + fin contrat automatique | ✅ |
-| S5 | Pointages + calcul A+C + corrections | ✅ |
-| S6 | CyclePaie + Wave Payout + polling | ✅ |
-| S7 | Dashboard + sécurité + OpenAPI spec | ✅ |
+| S0–S7 | Backend V1 complet (auth, agents, chantiers, pointages, cycles, dashboard) | ✅ |
+| **S8** | **Landing publique `/` + Onboarding self-serve 7 étapes `/onboarding`** | ✅ |
 
 **Infra production**
-- API → Railway : `https://kufinekk-api.up.railway.app`
-- Base de données → Supabase PostgreSQL
-- Dashboard → Vercel
-- CI/CD → GitHub Actions (push master = deploy auto)
+- API → Railway : `https://kufinekk-production.up.railway.app` (project `modest-abundance`, service `kufinekk`)
+- Base de données → Supabase PostgreSQL — projet `sdbrpkzxwbuooggktpqg` (eu-west-1)
+- Dashboard → Vercel : `https://kufinekk.vercel.app` (production branch `master`)
+- CI/CD → push master = deploy auto Vercel + Railway
 
-### Dashboard Web : 12/14 pages
+### Dashboard Web : 15/16 pages
 
 | Page | Statut |
 |------|--------|
+| `/` (landing publique) | ✅ NOUVEAU S8 |
+| `/onboarding` (wizard 7 étapes) | ✅ NOUVEAU S8 |
 | `/login` | ✅ |
 | `/dashboard` | ✅ |
 | `/agents` (liste + nouveau + profil `[id]`) | ✅ |
-| `/chantiers` (liste + nouveau) | ✅ |
-| `/chantiers/[id]` | ⏳ À faire |
+| `/chantiers` (liste + nouveau + `[id]`) | ✅ |
 | `/pointages` (liste + saisie QR) | ✅ |
 | `/cycles-paie` | ✅ |
 | `/contrats/[id]` | ✅ |
 | `/badges` | ✅ |
-| `/utilisateurs` | ⏳ À faire |
+| `/utilisateurs` | ⏳ À faire (priorité 1) |
 
-### Intégrations non encore activées
+### Module Onboarding API (S8)
 
-| Intégration | Raison | Action requise |
-|-------------|--------|----------------|
-| SMS AxiomText | `AXIOMTEXT_TOKEN` manquant sur Railway | Ajouter la variable |
-| Wave Payout | `WAVE_API_TOKEN` manquant sur Railway | Ajouter la variable |
+`apps/api/src/modules/onboarding/` :
+- `POST /onboarding/send-otp` — envoi SMS via AxiomText
+- `POST /onboarding/verify-otp` — vérification non-destructive (UX étape 2 du wizard)
+- `POST /onboarding/register` — transaction Prisma : Entreprise + Manager + Chantier + (Pointeur) + (Agents)
 
-### Optimisations performance appliquées
+### Middleware Next.js public
+
+`apps/web/src/middleware.ts` : routes publiques `/`, `/login`, `/onboarding/*`. Anonymes redirigés vers `/` (landing).
+
+### Intégrations externes
+
+| Service | Statut | Détails |
+|---------|--------|---------|
+| **SMS AxiomText** | ✅ **ACTIF** | `AXIOMTEXT_TOKEN` configuré + signature `OTP` (générique en attendant approbation `yaatal` par Sonatel) |
+| Wave Payout | ❌ Inactif | `WAVE_API_TOKEN` manquant — ouvrir compte Wave Business |
+| Cloudflare R2 | ✅ Actif | — |
+
+### Migrations Prisma — production
+
+| Migration | Date | Méthode |
+|-----------|------|---------|
+| `20260401000000_init` | 2026-04-01 | `prisma migrate deploy` |
+| `20260423000000_entreprise_onboarding_fields` | 2026-04-26 | Supabase MCP — colonnes `raisonSociale`, `ville`, `ninea`, `taille` (TEXT nullable) |
+
+### Optimisations performance
 
 - `@fastify/compress` gzip sur toutes les réponses API
 - `next: { revalidate: 20 }` sur les GET (cache Vercel 20s)
@@ -697,6 +710,7 @@ Tous les sprints S0→S7 sont terminés et déployés.
 
 ### Prochaines priorités
 
-1. `/chantiers/[id]` — détail chantier + liste agents actifs
-2. `/utilisateurs` — gestion pointeurs (créer, désactiver, changer PIN)
-3. Configurer `AXIOMTEXT_TOKEN` + `WAVE_API_TOKEN` sur Railway
+1. `/utilisateurs` — gestion pointeurs (créer, désactiver, changer PIN)
+2. Suivre approbation signature `yaatal` côté AxiomText → switcher `AXIOMTEXT_SIGNATURE`
+3. Wave Payout : ouvrir compte Wave Business + `WAVE_API_TOKEN`
+4. Export PDF Fiche de Paie (spec `docs/SPEC_fiche_de_paie.md`)

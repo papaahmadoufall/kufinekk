@@ -2,13 +2,13 @@
 > Source de vérité partagée entre Claude Code et Cowork.
 > Mettre à jour à chaque milestone. Commiter sur master.
 
-**Dernière mise à jour : 2026-04-11 — `/chantiers/[id]` implémenté**
+**Dernière mise à jour : 2026-04-26 — Landing publique + Onboarding self-serve + SMS AxiomText activé**
 
 ---
 
 ## Résumé en une phrase
 
-Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages restantes + 2 intégrations externes à activer.
+Backend V1 complet en production. Dashboard 13/14 pages. Landing publique + onboarding 7-étapes self-serve déployés. SMS AxiomText opérationnel. Reste : page `/utilisateurs` + activation Wave Payout.
 
 ---
 
@@ -16,10 +16,10 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 
 | Composant | URL | Statut |
 |-----------|-----|--------|
-| API (Railway) | `https://kufinekk-api.up.railway.app` | ✅ En ligne |
-| Base de données | Supabase PostgreSQL | ✅ En ligne |
+| API (Railway) | `https://kufinekk-production.up.railway.app` | ✅ En ligne |
+| Base de données | Supabase PostgreSQL (`sdbrpkzxwbuooggktpqg`) | ✅ En ligne |
 | Dashboard (Vercel) | `https://kufinekk.vercel.app` | ✅ En ligne |
-| CI/CD | GitHub Actions → Railway + Vercel | ✅ Actif |
+| Production branch | `master` (auto-deploy Vercel + Railway) | ✅ Actif |
 
 ---
 
@@ -28,6 +28,7 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 | Module | Endpoints | Statut |
 |--------|-----------|--------|
 | Auth | send-otp, verify-otp, login, logout | ✅ |
+| **Onboarding** | send-otp, **verify-otp**, register | ✅ **NOUVEAU** |
 | Entreprises | GET/PATCH /entreprises/me | ✅ |
 | Utilisateurs | CRUD /utilisateurs | ✅ |
 | Agents | CRUD + search + QR regenerate | ✅ |
@@ -43,6 +44,8 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 
 | Page | Route | Statut | Notes |
 |------|-------|--------|-------|
+| **Landing publique** | `/` | ✅ **NOUVEAU** | Page marketing accessible sans auth |
+| **Onboarding** | `/onboarding` | ✅ **NOUVEAU** | Wizard 7 étapes self-serve avec OTP |
 | Login | `/login` | ✅ | Auth Manager/Pointeur |
 | Dashboard | `/dashboard` | ✅ | Stats jour/semaine |
 | Liste agents | `/agents` | ✅ | Recherche + cards |
@@ -50,48 +53,41 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 | Profil agent | `/agents/[id]` | ✅ | QR + contrat + historique |
 | Liste chantiers | `/chantiers` | ✅ | Grid cards |
 | Nouveau chantier | `/chantiers/nouveau` | ✅ | Formulaire |
-| **Détail chantier** | `/chantiers/[id]` | ✅ | Calendrier présences + stats + corrections |
+| Détail chantier | `/chantiers/[id]` | ✅ | Calendrier présences + stats |
 | Liste pointages | `/pointages` | ✅ | Tabs statut + filtre date |
 | Saisie pointage | `/pointages/saisie` | ✅ | Flow 4 étapes + QR scanner |
 | Cycles de paie | `/cycles-paie` | ✅ | Liste + résumé |
 | Profil contrat | `/contrats/[id]` | ✅ | Valider/transférer/terminer |
 | Badges QR | `/badges` | ✅ | Grille imprimable |
-| **Utilisateurs** | `/utilisateurs` | ⏳ À FAIRE | Priorité 2 |
+| **Utilisateurs** | `/utilisateurs` | ⏳ À FAIRE | Priorité 1 |
 
-**Avancement : 13/14 pages (93%)**
+**Avancement : 15/16 pages (94%)** — landing + onboarding ajoutés à la roadmap
 
 ---
 
 ## Intégrations externes
 
-| Service | Statut | Bloqueur | Action |
-|---------|--------|----------|--------|
-| SMS AxiomText | ❌ Inactif | `AXIOMTEXT_TOKEN` manquant Railway | Obtenir token + configurer Railway |
-| Wave Payout | ❌ Inactif | `WAVE_API_TOKEN` manquant Railway | Ouvrir compte Wave Business |
-| Cloudflare R2 | ✅ Actif | — | — |
+| Service | Statut | Détails |
+|---------|--------|---------|
+| **SMS AxiomText** | ✅ **ACTIF** | Token `sms_***` + signature `OTP` (compte par défaut, en attente d'approbation `yaatal`) |
+| Wave Payout | ❌ Inactif | `WAVE_API_TOKEN` manquant — ouvrir compte Wave Business |
+| Cloudflare R2 | ✅ Actif | — |
 
 ---
 
 ## Prochaines priorités
 
-### Priorité 1 — `/utilisateurs` ← PROCHAINE PRIORITÉ
-- Liste des pointeurs/managers
-- Créer un nouveau pointeur
-- Désactiver un compte
-- Réinitialiser le PIN
+### Priorité 1 — `/utilisateurs`
+Liste pointeurs/managers · créer · désactiver · réinitialiser PIN
 
-### Priorité 3 — Export PDF Fiche de Paie
-- Spec complète : `SPEC_fiche_de_paie.md`
-- PDF par cycle de paie, tous agents dans un tableau
-- En-tête entreprise (logo R2, nom, adresse, email)
-- Tableau : nom · matricule · poste · jours · taux · heures supp (qté + montant) · salaire net · moyen paiement · date
-- Endpoint `GET /cycles-paie/:id/export-pdf` (MANAGER uniquement)
-- À ajouter : champ `moyenPaiement` + `datePaiement` sur `CyclePaie`
-- À vérifier : upload logo sur profil entreprise
+### Priorité 2 — Approbation signature `yaatal` côté AxiomText
+Une fois validé par Sonatel, switcher `AXIOMTEXT_SIGNATURE=OTP` → `AXIOMTEXT_SIGNATURE=yaatal`
 
-### Priorité 4 — Activer les intégrations
-- Configurer `AXIOMTEXT_TOKEN` sur Railway → SMS actifs
-- Configurer `WAVE_API_TOKEN` sur Railway → paiements Wave actifs
+### Priorité 3 — Wave Payout
+Ouvrir compte Wave Business · obtenir `WAVE_API_TOKEN` · configurer Railway
+
+### Priorité 4 — Export PDF Fiche de Paie
+Spec : `SPEC_fiche_de_paie.md` · endpoint `GET /cycles-paie/:id/export-pdf`
 
 ---
 
@@ -99,8 +95,8 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 
 | # | Problème | Fichier | Impact |
 |---|----------|---------|--------|
-| 1 | SMS non envoyés (token manquant) | `axiomtext.ts` | Moyen — SMS OTP fallback à confirmer |
-| 2 | Wave Payout non activé | `wave.ts` | Fort — paiements manuels pour l'instant |
+| 1 | Wave Payout non activé | `wave.ts` | Fort — paiements manuels |
+| 2 | Signature SMS = `OTP` (générique) en attendant `yaatal` | env Railway | Cosmétique |
 
 ---
 
@@ -108,35 +104,22 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 
 | Variable | Statut |
 |----------|--------|
-| DATABASE_URL | ✅ Configurée |
-| JWT_SECRET | ✅ Configurée |
-| JWT_EXPIRES_IN | ✅ Configurée |
-| NODE_ENV | ✅ Configurée |
-| PORT / HOST | ✅ Configurées |
-| CORS_ORIGIN | ✅ Configurée |
-| API_BASE_URL | ✅ Configurée |
-| AXIOMTEXT_SIGNATURE | ✅ Configurée |
-| WAVE_API_URL | ✅ Configurée |
-| R2_* (4 variables) | ✅ Configurées |
-| **AXIOMTEXT_TOKEN** | ❌ Manquante |
+| DATABASE_URL · JWT_SECRET · JWT_EXPIRES_IN | ✅ |
+| NODE_ENV · PORT · HOST · CORS_ORIGIN · API_BASE_URL | ✅ |
+| **AXIOMTEXT_TOKEN** | ✅ **CONFIGURÉ** |
+| AXIOMTEXT_SIGNATURE | ✅ (`OTP` — temporaire) |
+| WAVE_API_URL | ✅ |
+| R2_* (4 variables) | ✅ |
 | **WAVE_API_TOKEN** | ❌ Manquante |
 
 ---
 
-## Nouvelles features identifiées (session 11 avril 2026)
+## Migrations Prisma — Production
 
-| Feature | Décision | Version |
-|---------|----------|---------|
-| Import Excel agents | Enrôlement uniquement (one-shot) | V1 enrichie |
-| Calendrier présence hebdo | Intégré dans `/chantiers/[id]` | V1 — P1 |
-| Fiche de présence PDF | Export depuis `/chantiers/[id]` | V1 enrichie |
-| Résumé de paie PDF | Spec dans `SPEC_fiche_de_paie.md` | V1 enrichie |
-| Workflow approbation paie | Gestionnaire / Validateur — à valider pilote | V2 |
-| Historique paiements archivé | Stockage R2 à validation cycle | V1 enrichie |
-| Flow d'enrôlement self-serve | Après 10 onboardings manuels | V2 |
-
-**Règle décidée :** Import Excel = enrôlement uniquement. Post-enrôlement = QR obligatoire.
-**3 documents distincts :** Fiche de présence (opérationnel) · Résumé de paie (validation) · Fiche de paie (archive post-paiement)
+| Migration | Date | Statut |
+|-----------|------|--------|
+| `20260401000000_init` | 2026-04-01 | ✅ Appliquée |
+| `20260423000000_entreprise_onboarding_fields` | 2026-04-26 | ✅ Appliquée (raisonSociale, ville, ninea, taille) |
 
 ---
 
@@ -145,6 +128,7 @@ Backend V1 complet en production sur Railway. Dashboard web 12/14 pages. 2 pages
 | Version | Statut | Description |
 |---------|--------|-------------|
 | V1 Backend | ✅ Terminé | API complète en prod |
-| V1 Dashboard | 🔄 En cours | 12/14 pages |
-| V2 | ⏳ Planifié | Exports, KYC, analytics, multi-pays |
+| V1 Dashboard | 🔄 En cours | 15/16 pages |
+| V1 Self-serve | ✅ **Terminé** | Landing + onboarding 7 étapes opérationnels |
+| V2 | ⏳ Planifié | Exports PDF, KYC, analytics, multi-pays |
 | V3 | ⏳ Planifié | Mobile natif, GPS, hors-ligne, SaaS |

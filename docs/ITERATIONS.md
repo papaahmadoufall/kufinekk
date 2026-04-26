@@ -172,6 +172,44 @@
 
 ---
 
+## Session Cowork — 11 avril 2026 (planification pré-pilote)
+
+### Décisions produit prises
+
+**3 documents distincts — fiche de présence ≠ fiche de paie ≠ résumé de paie**
+- Décision : traiter ces 3 documents comme 3 étapes d'un pipeline, pas 3 features
+- Fiche de présence = document opérationnel pendant la semaine (grille jours × agents)
+- Résumé de paie = document de validation en fin de cycle (consolidé)
+- Fiche de paie = document archive après paiement Wave (par agent)
+- Pourquoi : les entreprises BTP utilisent déjà ces 3 documents séparément — ne pas les fusionner
+
+**Import Excel = enrôlement uniquement, QR obligatoire après**
+- Décision : l'import Excel est une fonctionnalité d'onboarding one-shot, pas un flux récurrent
+- Pourquoi : autoriser l'import en continu crée une porte de sortie au QR scanning — adoption compromise
+- Rejeté : import Excel permanent en parallèle du QR (hybride trop complexe, adoption risquée)
+- Cas limite : première semaine partielle → démarrage propre au jour de l'enrôlement, pas de rétroactif Excel
+
+**Calendrier de présence hebdo intégré dans `/chantiers/[id]`**
+- Décision : la page détail chantier est aussi le calendrier de présence semaine par semaine
+- Grille : agents en lignes, jours en colonnes (Lun→Dim), navigation prev/next semaine
+- Alimenté uniquement par les pointages QR/OTP — pas d'import sur cette vue
+- Pourquoi : un seul endroit pour voir ET corriger les présences, pas deux pages séparées
+- Rejeté : page `/presences` séparée (fragmentation inutile)
+
+**Workflow approbation paie (Gestionnaire/Validateur) — décision reportée**
+- Décision : à valider avec le client pilote en réunion — dépend de leur organisation interne
+- Question clé : est-ce que le chef de chantier et le directeur sont deux personnes différentes ?
+- Rejeté pour l'instant : builder le workflow sans validation terrain
+
+**Fiche de paie PDF — 6 colonnes, générée à la validation du cycle**
+- Décision : stocker sur R2 au moment de la validation (pas à la volée)
+- Colonnes retenues : Agent + Matricule · Poste · Jours présents · Jours absents · Taux journalier · Heures supp (qté + montant) · Salaire net · Moyen de paiement
+- Pourquoi stockage R2 : évite les divergences si corrections post-génération
+- Rejeté : génération à la volée sans stockage (pas d'audit trail)
+- Spec complète : `SPEC_fiche_de_paie.md`
+
+---
+
 ## Décisions ouvertes
 
 | # | Question | Options | Statut |
@@ -179,3 +217,48 @@
 | 1 | Migration Railway → Sonatel Cloud | Après régularisation CDP | En attente |
 | 2 | Plan tarifaire définitif | 15k/35k XOF/mois hypothèse | À valider avec premiers clients |
 | 3 | V2 : KYC agents | Photo CNI via R2 | Planifié |
+
+---
+
+## Sprint S8 — Landing publique + Onboarding self-serve (2026-04-25/26)
+**Commits** : `d727864` (merge feat/landing-onboarding) → `d782324` (chip fix)
+
+### Décisions prises
+
+**Landing `/` accessible sans auth + middleware ouvert sur 3 routes**
+- Décision : middleware Next.js autorise `/`, `/login`, `/onboarding/*` sans token ; redirige les anonymes vers `/` (au lieu de `/login`)
+- Pourquoi : le visiteur découvre Kufinekk via la landing avant de s'inscrire — `/login` n'est plus la porte d'entrée publique
+- Fichier : `apps/web/src/middleware.ts`
+
+**Onboarding 7 étapes en wizard client-side**
+- Étapes : Compte → Vérification OTP → Entreprise → Chantier → Pointeur → Agents → Prêt
+- Décision : tout l'état du wizard reste en mémoire client (`useState`) ; un seul appel `POST /onboarding/register` à la fin crée Entreprise + Manager + Chantier + Pointeur + Agents en transaction Prisma
+- Pourquoi : un visiteur peut quitter sans pollution DB ; pas de comptes orphelins
+- Rejeté : créer chaque ressource étape par étape (cleanup compliqué en cas d'abandon)
+
+**OTP : vérification non-destructive au step 2**
+- Décision : nouvelle route `POST /onboarding/verify-otp` qui valide le code SANS le marquer `utilise=true`
+- Le `register` final consomme le même OTP (toujours valide tant qu'il n'expire pas — 10 min)
+- Pourquoi : feedback UX immédiat à l'étape OTP sans bloquer le register final
+- Rejeté : valider seulement à la fin (UX dégradée — l'utilisateur découvre l'erreur 5 étapes plus tard)
+
+**SMS AxiomText — signature par défaut `OTP` en attendant approbation `yaatal`**
+- Décision : config `AXIOMTEXT_SIGNATURE=OTP` (signature générique fournie par AxiomText pour comptes non-approuvés)
+- Demande de changement de nom vers `yaatal` en cours d'examen côté Sonatel/Orange
+- Code rendu signature obligatoire + normalise le téléphone vers `+221xxxxxxxxx` automatiquement
+- Fichier : `apps/api/src/shared/services/axiomtext.ts`
+
+**Agents wizard : 4 colonnes (sans téléphone)**
+- Décision : ne demander que prénom/nom/poste/taux à l'onboarding ; téléphone optionnel à compléter depuis la page Agents
+- Pourquoi : friction minimale au moment de l'inscription ; un manager rentre 3-4 agents rapidement
+- Le téléphone reste nécessaire pour le SMS QR code, mais c'est une étape post-onboarding
+
+**Migration DB `entreprise_onboarding_fields`**
+- Ajout colonnes `Entreprise.raisonSociale | ville | ninea | taille` (toutes nullable)
+- Appliquée en prod via Supabase MCP (`apply_migration`) le 26/04/2026
+- Pourquoi nullable : préserve la compatibilité avec les entreprises créées avant onboarding self-serve
+
+**Vercel deployment — vercel.json à la racine du monorepo**
+- Décision finale : `outputDirectory: apps/web/.next` (chemin depuis racine repo) + `buildCommand: npm run build:web`
+- Override Install Command supprimé du dashboard Vercel (`npm install --prefix=../..` qui causait conflits)
+- Production branch : `master`
